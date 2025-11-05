@@ -35,7 +35,18 @@ module API
         cached_representer disabled: true
 
         def writable_attributes
-          super + %w[status]
+          super + %w[
+            status
+            project_code
+            project_financial_code
+            project_spv_name
+            project_site_name
+            project_status
+            project_stage
+            project_division
+            project_gis_object_id
+            project_gis_database_id
+          ]
         end
       end
     end

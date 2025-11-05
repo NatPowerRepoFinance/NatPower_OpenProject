@@ -63,6 +63,67 @@ module API
                  type: "Boolean",
                  required: false
 
+          schema :project_code,
+                 type: "String",
+                 name_source: ->(*) { "Project Code" },
+                 required: true,
+                 writable: true,
+                 min_length: 5,
+                 max_length: 5
+
+          schema :project_financial_code,
+                 type: "String",
+                 name_source: ->(*) { "Financial Budget Code" },
+                 required: false,
+                 writable: true,
+                 max_length: 9
+
+          schema_with_allowed_string_collection :project_spv_name,
+                                                type: "String",
+                                                name_source: ->(*) { "SPV Name" },
+                                                required: false,
+                                                writable: true,
+                                                values_callback: ->(*) { LookupSpvNf.order(:spv_name).pluck(:spv_name).compact }
+
+          schema :project_site_name,
+                 type: "String",
+                 name_source: ->(*) { "Site Name" },
+                 required: false,
+                 writable: true,
+                 max_length: 50
+
+          schema_with_allowed_string_collection :project_status,
+                                                type: "String",
+                                                name_source: ->(*) { "Project Status" },
+                                                required: true,
+                                                writable: true,
+                                                values_callback: ->(*) { LookupProjectStatus.order(:status_id).pluck(:label) }
+
+          schema_with_allowed_string_collection :project_stage,
+                                                type: "String",
+                                                name_source: ->(*) { "Project Stage" },
+                                                required: true,
+                                                writable: true,
+                                                values_callback: ->(*) { LookupProjectStage.order(:stage_id).pluck(:label) }
+
+          schema_with_allowed_string_collection :project_division,
+                                                type: "String",
+                                                name_source: ->(*) { "Division" },
+                                                required: true,
+                                                writable: true,
+                                                values_callback: ->(*) { CompanyDivision.order(:label).pluck(:code) }
+
+          schema :project_gis_object_id,
+                 type: "String",
+                 name_source: ->(*) { "GIS Object ID" },
+                 required: false,
+                 writable: true
+
+          schema :project_gis_database_id,
+                 type: "String",
+                 name_source: ->(*) { "GIS Database ID" },
+                 required: false,
+                 writable: true
           schema_with_allowed_collection :status,
                                          type: "ProjectStatus",
                                          name_source: ->(*) { I18n.t("activerecord.attributes.project.status_code") },
