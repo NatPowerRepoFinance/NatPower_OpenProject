@@ -287,6 +287,15 @@ class PermittedParams
                                                 :public,
                                                 :responsible_id,
                                                 :identifier,
+                                                :project_code,
+                                                :project_financial_code,
+                                                :project_spv_name,
+                                                :project_site_name,
+                                                :project_status,
+                                                :project_stage,
+                                                :project_division,
+                                                :project_gis_object_id,
+                                                :project_gis_database_id,
                                                 :project_type_id,
                                                 :parent_id,
                                                 :templated,
@@ -303,7 +312,20 @@ class PermittedParams
 
   def new_project
     params
-      .expect(project: %i[name parent_id workspace_type])
+      .expect(project: %i[
+        name
+        parent_id
+        workspace_type
+        project_code
+        project_financial_code
+        project_spv_name
+        project_site_name
+        project_status
+        project_stage
+        project_division
+        project_gis_object_id
+        project_gis_database_id
+      ])
       .merge(custom_field_values(:project))
   end
 

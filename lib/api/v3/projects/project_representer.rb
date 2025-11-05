@@ -188,6 +188,28 @@ module API
         property :active
         property :public
 
+        property :project_code, render_nil: true
+        property :project_financial_code, render_nil: true
+        property :project_spv_name, render_nil: true
+        property :project_site_name, render_nil: true
+        property :project_status, render_nil: true
+        property :project_stage, render_nil: true
+        property :project_division, render_nil: true
+        property :project_gis_object_id, render_nil: true
+        property :project_gis_database_id, render_nil: true
+
+        property :custom_fields_by_name,
+                 as: "customFieldsByName",
+                 exec_context: :decorator,
+                 getter: ->(*) {
+                   represented
+                     .custom_field_values
+                     .each_with_object({}) do |cv, memo|
+                       key = cv.custom_field.name
+                       memo[key] = cv.typed_value
+                     end
+                 }
+
         formattable_property :description,
                              cache_if: current_user_view_allowed_lambda
 

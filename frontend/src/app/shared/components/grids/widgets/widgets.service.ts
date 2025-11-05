@@ -25,6 +25,9 @@ import {
   WidgetProjectStatusComponent,
 } from 'core-app/shared/components/grids/widgets/project-status/project-status.component';
 import {
+  WidgetProjectDetailsComponent,
+} from 'core-app/shared/components/grids/widgets/project-details/project-details.component';
+import {
   WidgetProjectStatusBetaComponent,
 } from 'core-app/shared/components/grids/widgets/project-status-beta/project-status-beta.component';
 import { WidgetSubprojectsComponent } from 'core-app/shared/components/grids/widgets/subprojects/subprojects.component';
@@ -220,6 +223,14 @@ export class GridWidgetsService {
           text: {
             raw: '',
           },
+        },
+      },
+      {
+        identifier: 'project_details',
+        component: WidgetProjectDetailsComponent,
+        title: 'Project Details',
+        properties: {
+          name: 'Project Details',
         },
       },
       {
