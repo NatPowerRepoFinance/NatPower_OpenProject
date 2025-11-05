@@ -277,7 +277,6 @@ curl -X POST \
   "projectStatus": "Active",
   "projectStage": "Opportunity",
   "projectDivision": "NPLUK",
-  ...
 }
 ```
 
@@ -329,7 +328,6 @@ curl -X PATCH \
   "name": "Updated Project Name",
   "projectStatus": "On Hold",
   "projectStage": "Construction",
-  ...
 }
 ```
 
@@ -388,7 +386,6 @@ curl -X PATCH \
   "projectDivision": "NPHUK",
   "projectStatus": "Archive",
   "projectStage": "Operation",
-  ...
 }
 ```
 
@@ -540,49 +537,6 @@ curl -X DELETE \
 
 ---
 
-## Examples
-
-### Complete Workflow Example
-
-```bash
-# 1. Set your API key
-export API_KEY="your-api-key-here"
-export BASE_URL="http://localhost:3000/api/v3"
-
-# 2. Create a new project
-curl -X POST \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Wind Farm Project",
-    "identifier": "wind-farm-project",
-    "public": false,
-    "projectDivision": "NPLUK",
-    "projectStatus": "Active",
-    "projectStage": "Opportunity"
-  }' \
-  $BASE_URL/projects
-
-# 3. Get the created project (assuming ID is 123)
-curl -H "Authorization: Bearer $API_KEY" \
-  $BASE_URL/projects/123
-
-# 4. Update project details
-curl -X PATCH \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "projectStatus": "On Hold",
-    "projectStage": "Construction"
-  }' \
-  $BASE_URL/projects/123/details
-
-# 5. Get project schema to see available values
-curl -H "Authorization: Bearer $API_KEY" \
-  $BASE_URL/projects/schema
-```
-
----
 
 ## Additional Resources
 
