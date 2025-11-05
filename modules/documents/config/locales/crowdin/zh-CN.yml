@@ -1,0 +1,68 @@
+#-- copyright
+#OpenProject is an open source project management software.
+#Copyright (C) the OpenProject GmbH
+#This program is free software; you can redistribute it and/or
+#modify it under the terms of the GNU General Public License version 3.
+#OpenProject is a fork of ChiliProject, which is a fork of Redmine. The copyright follows:
+#Copyright (C) 2006-2013 Jean-Philippe Lang
+#Copyright (C) 2010-2013 the ChiliProject Team
+#This program is free software; you can redistribute it and/or
+#modify it under the terms of the GNU General Public License
+#as published by the Free Software Foundation; either version 2
+#of the License, or (at your option) any later version.
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#You should have received a copy of the GNU General Public License
+#along with this program; if not, write to the Free Software
+#Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#See COPYRIGHT and LICENSE files for more details.
+#++
+zh-CN:
+  plugin_openproject_documents:
+    name: "OpenProject 文档"
+    description: "允许在项目中创建文档的 OpenProject 插件。"
+  activerecord:
+    models:
+      document: "文档"
+    attributes:
+      document:
+        content_binary: "二进制内容"
+        title: "文档标题"
+  activity:
+    filter:
+      document: "文档"
+  default_doc_category_tech: "技术文档"
+  default_doc_category_user: "用户文档"
+  enumeration_doc_categories: "文档类别"
+  documents:
+    page_header:
+      heading: "所有文档"
+    subheader:
+      filter:
+        label: "文档名称过滤器"
+        placeholder: "在此输入搜索文档名称"
+    documents_list_blank_slate:
+      heading: "还没有文档"
+      description: "此视图中没有文档。您可以点击下面的按钮添加一个文档。"
+    index_page:
+      name: "名称"
+      type: "类型"
+      updated_at: "上次编辑"
+    menu:
+      all: "所有文档"
+      types: "类型"
+    label_attachment_author: "附件作者"
+    label_categories: "类别"
+    new_category: "新类别"
+  label_document_added: "文档已添加"
+  label_document_new: "新建文档"
+  label_document_plural: "文档"
+  label_documents: "文档"
+  label_document_title: "标题"
+  label_document_description: "描述"
+  label_document_category: "类别"
+  permission_manage_documents: "管理文档"
+  permission_view_documents: "查看文档"
+  project_module_documents: "文档"

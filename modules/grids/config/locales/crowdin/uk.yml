@@ -1,0 +1,34 @@
+uk:
+  grids:
+    label_widget_in_grid: "Віджет, що міститься в сітці %{grid_name}"
+    widgets:
+      subitems:
+        title: "Піделементи"
+        no_results: "Немає видимих дочірніх об’єктів."
+        view_all_subitems: "Переглянути всі піделементи"
+      members:
+        title: "Members"
+        no_results: "Немає видимих учасників."
+        view_all_members: "Переглянути всіх учасників"
+        show_members_count: "Show all %{count} members"
+        x_more:
+          one: "and one more member."
+          few: "and %{count} more members."
+          many: "and %{count} more members."
+          other: "and %{count} more members."
+      news:
+        no_results: "Нічого нового для звітування."
+  activerecord:
+    attributes:
+      grids/grid:
+        page: "Сторінка"
+        row_count: "Кількість рядків"
+        column_count: "Кількість стовпців"
+        widgets: "Віджети"
+        scope: "Область"
+    errors:
+      models:
+        grids/grid:
+          overlaps: 'перекриваються.'
+          outside: 'знаходиться за межами сітки.'
+          end_before_start: 'кінцеве значення має бути більше початкового значення.'

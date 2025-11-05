@@ -1,0 +1,32 @@
+pt-BR:
+  grids:
+    label_widget_in_grid: "Widget contido na Grade %{grid_name}"
+    widgets:
+      subitems:
+        title: "Subitens"
+        no_results: "Não há filhos visíveis."
+        view_all_subitems: "Visualizar todos os subitens"
+      members:
+        title: "Members"
+        no_results: "Nenhum membro visível."
+        view_all_members: "Visualizar todos os membros"
+        show_members_count: "Show all %{count} members"
+        x_more:
+          one: "and one more member."
+          other: "and %{count} more members."
+      news:
+        no_results: "Nada de novo para relatar."
+  activerecord:
+    attributes:
+      grids/grid:
+        page: "Página"
+        row_count: "Número de linhas"
+        column_count: "Número de colunas"
+        widgets: "Widgets"
+        scope: "Escopo"
+    errors:
+      models:
+        grids/grid:
+          overlaps: 'sobreposição.'
+          outside: 'está fora da grade.'
+          end_before_start: 'o valor final precisa ser maior que o valor inicial.'

@@ -1,0 +1,68 @@
+#-- copyright
+#OpenProject is an open source project management software.
+#Copyright (C) the OpenProject GmbH
+#This program is free software; you can redistribute it and/or
+#modify it under the terms of the GNU General Public License version 3.
+#OpenProject is a fork of ChiliProject, which is a fork of Redmine. The copyright follows:
+#Copyright (C) 2006-2013 Jean-Philippe Lang
+#Copyright (C) 2010-2013 the ChiliProject Team
+#This program is free software; you can redistribute it and/or
+#modify it under the terms of the GNU General Public License
+#as published by the Free Software Foundation; either version 2
+#of the License, or (at your option) any later version.
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#You should have received a copy of the GNU General Public License
+#along with this program; if not, write to the Free Software
+#Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#See COPYRIGHT and LICENSE files for more details.
+#++
+hu:
+  plugin_openproject_documents:
+    name: "OpenProject Dokumentumok"
+    description: "Egy OpenProjekt plugin projekten belüli dokumentumok létrehozásához."
+  activerecord:
+    models:
+      document: "Dokumentum"
+    attributes:
+      document:
+        content_binary: "Content binary"
+        title: "Cím"
+  activity:
+    filter:
+      document: "Dokumentumok"
+  default_doc_category_tech: "Technikai dokumentáció"
+  default_doc_category_user: "Felhasználói dokumentáció"
+  enumeration_doc_categories: "Dokumentum kategóriák"
+  documents:
+    page_header:
+      heading: "All documents"
+    subheader:
+      filter:
+        label: "Document name filter"
+        placeholder: "Type here to search document names"
+    documents_list_blank_slate:
+      heading: "There are no documents yet"
+      description: "There are no documents in this view. You can click the button below to add one."
+    index_page:
+      name: "Név"
+      type: "Típus"
+      updated_at: "Last edited"
+    menu:
+      all: "All documents"
+      types: "Típus"
+    label_attachment_author: "Melléklet szerzője"
+    label_categories: "Kategóriák"
+    new_category: "Új kategória"
+  label_document_added: "Dokumentum hozzáadva"
+  label_document_new: "Új dokumentum"
+  label_document_plural: "Dokumentumok"
+  label_documents: "Dokumentumok"
+  label_document_title: "Cím"
+  label_document_description: "Leírás"
+  label_document_category: "Kategória"
+  permission_manage_documents: "Dokumentumok kezelése"
+  permission_view_documents: "Dokumetumok megtekintése"
+  project_module_documents: "Dokumentumok"

@@ -1,0 +1,7 @@
+<op-autocompleter data-test-selector="tp-add-assignee"
+  (change)="selectUser($event)"
+  [fetchDataDirectly]="true"
+  [getOptionsFn]="getOptionsFn"
+  resource="users"
+  appendTo="body"
+ />

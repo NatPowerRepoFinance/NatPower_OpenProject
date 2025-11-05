@@ -1,0 +1,32 @@
+es:
+  grids:
+    label_widget_in_grid: "Widget contenido en la cuadrícula %{grid_name}"
+    widgets:
+      subitems:
+        title: "Subelementos"
+        no_results: "No hay subelementos visibles."
+        view_all_subitems: "Ver todos los subelementos"
+      members:
+        title: "Members"
+        no_results: "No hay miembros visibles."
+        view_all_members: "Ver todos los miembros"
+        show_members_count: "Show all %{count} members"
+        x_more:
+          one: "and one more member."
+          other: "and %{count} more members."
+      news:
+        no_results: "Nada nuevo sobre lo que informar."
+  activerecord:
+    attributes:
+      grids/grid:
+        page: "Página"
+        row_count: "Número de filas"
+        column_count: "Número de columnas"
+        widgets: "Widgets"
+        scope: "Ámbito"
+    errors:
+      models:
+        grids/grid:
+          overlaps: 'superpuesto.'
+          outside: 'está fuera de la red.'
+          end_before_start: 'el valor final necesita ser mayor que el valor inicial.'

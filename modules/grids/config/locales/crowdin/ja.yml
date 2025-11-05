@@ -1,0 +1,31 @@
+ja:
+  grids:
+    label_widget_in_grid: "グリッド %{grid_name} に含まれるウィジェット"
+    widgets:
+      subitems:
+        title: "Subitems"
+        no_results: "There are no visible children."
+        view_all_subitems: "View all subitems"
+      members:
+        title: "Members"
+        no_results: "表示するメンバーはありません。"
+        view_all_members: "すべてのメンバーを表示"
+        show_members_count: "Show all %{count} members"
+        x_more:
+          other: "and %{count} more members."
+      news:
+        no_results: "新しい報告はありません。"
+  activerecord:
+    attributes:
+      grids/grid:
+        page: "ページ"
+        row_count: "行数"
+        column_count: "列数"
+        widgets: "ウィジェット"
+        scope: "スコープ"
+    errors:
+      models:
+        grids/grid:
+          overlaps: 'オーバーラップ。'
+          outside: 'グリッドの外側です。'
+          end_before_start: '終了値は開始値よりも大きくする必要があります。'

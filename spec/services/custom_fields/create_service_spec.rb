@@ -1,0 +1,172 @@
+# frozen_string_literal: true
+
+#-- copyright
+# OpenProject is an open source project management software.
+# Copyright (C) the OpenProject GmbH
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License version 3.
+#
+# OpenProject is a fork of ChiliProject, which is a fork of Redmine. The copyright follows:
+# Copyright (C) 2006-2013 Jean-Philippe Lang
+# Copyright (C) 2010-2013 the ChiliProject Team
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# See COPYRIGHT and LICENSE files for more details.
+#++
+
+require "spec_helper"
+require "services/base_services/behaves_like_create_service"
+
+RSpec.describe CustomFields::CreateService, type: :model do
+  it_behaves_like "BaseServices create service" do
+    context "when creating a project cf" do
+      let(:model_instance) { build_stubbed(:project_custom_field) }
+
+      it "modifies the settings on successful call" do
+        subject
+        expect(Setting.enabled_projects_columns).to include(model_instance.column_name)
+      end
+    end
+  end
+
+  describe "#call" do
+    let(:user) { build_stubbed(:admin) }
+    let(:contract_class) { CustomFields::CreateContract }
+    let(:contract_instance) { instance_double(contract_class, validate: true) }
+
+    let(:instance) do
+      described_class.new(user:)
+    end
+
+    subject(:instance_call) { instance.call(attributes) }
+
+    before do
+      User.current = user
+      allow(contract_class)
+        .to receive(:new).with(instance_of(ProjectCustomField), user, options: {}).and_return(contract_instance)
+    end
+
+    describe "calculated value custom field",
+             with_ee: %i[calculated_values],
+             with_flag: { calculated_value_project_attribute: true } do
+      using CustomFieldFormulaReferencing
+
+      shared_let(:project_custom_field_section) { create(:project_custom_field_section) }
+
+      shared_let(:project1) { create(:project) }
+      shared_let(:project2) { create(:project) }
+      shared_let(:project3) { create(:project) }
+      shared_let(:project4) { create(:project) }
+      shared_let(:projects) { [project1, project2, project3, project4] }
+
+      let(:common_attributes) do
+        {
+          type: "ProjectCustomField",
+          field_format: "calculated_value",
+          name: "foo",
+          custom_field_section_id: project_custom_field_section.id
+        }
+      end
+
+      before do
+        find_each = allow(Project).to receive(:find_each)
+
+        projects.each do |project|
+          find_each.and_yield project
+        end
+      end
+
+      context "when creating not a calculated value" do
+        let(:attributes) { { **common_attributes, field_format: "int" } }
+
+        it "doesn't try to calculate values" do
+          expect(subject).to be_success
+
+          expect(Project).not_to have_received(:find_each)
+        end
+      end
+
+      context "when creating without is_required mark" do
+        let(:attributes) { { **common_attributes, formula: "2 + 2" } }
+
+        it "doesn't try to calculate values" do
+          expect(subject).to be_success
+          expect(subject.result).to have_attributes(is_required: false)
+
+          expect(Project).not_to have_received(:find_each)
+        end
+      end
+
+      context "when creating with is_required mark" do
+        context "when custom field has static formula" do
+          let(:attributes) { { **common_attributes, formula: "2 + 2", is_required: true } }
+
+          it "calculates values on all objects" do
+            expect(subject).to be_success
+            expect(subject.result).to have_attributes(is_required: true)
+
+            aggregate_failures do
+              projects.each do |project|
+                expect(project.custom_value_attributes(all: true)).to eq(subject.result.id => "4")
+              end
+            end
+          end
+
+          it "saves all objects" do
+            projects.each { allow(it).to receive(:save) }
+
+            expect(subject).to be_success
+            expect(subject.result).to have_attributes(is_required: true)
+
+            expect(projects).to all(have_received(:save))
+          end
+        end
+
+        context "when custom field formula references other fields" do
+          let!(:static) { create(:integer_project_custom_field, projects: [project1, project2, project3]) }
+          let(:attributes) { { **common_attributes, formula: "#{static} * 3", is_required: true } }
+
+          before do
+            create(:custom_value, customized: project1, custom_field: static, value: 1)
+            create(:custom_value, customized: project3, custom_field: static, value: 2)
+          end
+
+          it "updates calculated values on all objects that have the static field set" do
+            expect(subject).to be_success
+            expect(subject.result).to have_attributes(is_required: true)
+
+            aggregate_failures do
+              expect(project1.custom_value_attributes).to eq(static.id => "1", subject.result.id => "3")
+              expect(project2.custom_value_attributes).to eq(static.id => nil, subject.result.id => nil)
+              expect(project3.custom_value_attributes).to eq(static.id => "2", subject.result.id => "6")
+              expect(project4.custom_value_attributes).to eq(subject.result.id => nil)
+            end
+          end
+
+          it "saves all objects" do
+            projects.each { allow(it).to receive(:save) }
+
+            expect(subject).to be_success
+            expect(subject.result).to have_attributes(is_required: true)
+
+            expect(projects).to all(have_received(:save))
+          end
+        end
+      end
+    end
+  end
+end
