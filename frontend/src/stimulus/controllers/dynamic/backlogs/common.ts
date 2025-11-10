@@ -53,7 +53,7 @@ if (window.RB === null || window.RB === undefined) {
       }
 
       F.prototype = arguments[0];
-      // @ts-expect-error TS(7009): 'new' expression, whose target lacks a construct s... Remove this comment to see the full error message
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       obj = new F();
 
       // Add all the other arguments as mixins that

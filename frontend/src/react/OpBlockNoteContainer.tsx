@@ -173,7 +173,7 @@ export default function OpBlockNoteContainer({ inputField,
   const getCustomSlashMenuItems = (editor:EditorType) => {
     return [
       ...getDefaultReactSlashMenuItems(editor),
-      openProjectWorkPackageSlashMenu(editor),
+      openProjectWorkPackageSlashMenu(editor as any),
     ];
   };
 

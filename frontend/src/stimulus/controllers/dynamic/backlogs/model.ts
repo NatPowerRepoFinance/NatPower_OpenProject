@@ -150,8 +150,8 @@ RB.Model = (function ($) {
       $('.stories .editors .editor').each(function (index) {
         let value;
 
-        // @ts-expect-error TS(2345): Argument of type 'string | undefined' is not assig... Remove this comment to see the full error message
-        value = parseInt($(this).attr('tabindex'), 10);
+        const tabindex = $(this).attr('tabindex');
+        value = parseInt(tabindex || '0', 10);
 
         if (maxTabIndex < value) {
           maxTabIndex = value;
@@ -164,8 +164,8 @@ RB.Model = (function ($) {
           const fieldId = field.attr('field_id');
           const fieldName = field.attr('fieldname');
           const fieldLabel = field.attr('fieldlabel');
-          // @ts-expect-error TS(2345): Argument of type 'string | undefined' is not assig... Remove this comment to see the full error message
-          const fieldOrder = parseInt(field.attr('fieldorder'), 10);
+          const fieldOrderAttr = field.attr('fieldorder');
+          const fieldOrder = parseInt(fieldOrderAttr || '0', 10);
           const fieldEditable = field.attr('fieldeditable') || 'true';
           const fieldType = field.attr('fieldtype') || 'input';
           let typeId;
@@ -185,13 +185,11 @@ RB.Model = (function ($) {
             } else if (fieldName === 'type_id') {
               input = $(`#${fieldName}_options`).clone(true);
               // if the type changes the status dropdown has to be modified
-              input.change(function () {
-                // @ts-expect-error TS(2683): 'this' implicitly has type 'any' because it does n... Remove this comment to see the full error message
+              input.change(function (this:any) {
                 typeId = $(this).val();
                 statusId = $.trim(self.$.find('.status_id .v').html());
                 let newInput = self.findFactory(typeId, statusId, 'status_id');
                 newInput = self.prepareInputFromFactory(newInput, fieldId, 'status_id', fieldOrder, maxTabIndex);
-                // @ts-expect-error TS(2683): 'this' implicitly has type 'any' because it does n... Remove this comment to see the full error message
                 newInput = self.replaceStatusForNewType(input, newInput, $(this).parent().find('.status_id').val(), editor);
               });
             } else {
@@ -218,9 +216,8 @@ RB.Model = (function ($) {
           });
 
           $('<label />').attr({
-            for: input.attr('id'),
-          // @ts-expect-error TS(2345): Argument of type 'string | undefined' is not assig... Remove this comment to see the full error message
-          }).text(fieldLabel).appendTo(editor);
+            for: input.attr('id') || '',
+          }).text(fieldLabel || '').appendTo(editor);
           input.appendTo(editor);
         });
       }

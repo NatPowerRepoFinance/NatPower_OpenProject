@@ -207,7 +207,7 @@ export class WorkPackageCreateComponent extends UntilDestroyedMixin implements O
   }
 
   protected createdWorkPackage() {
-    const defaults:HalSource = (this.stateParams.defaults as HalSource) || {};
+    const defaults:HalSource = (this.stateParams.defaults as HalSource) || { _links: {} };
     defaults._links = defaults._links || {};
 
     const type = this.stateParams.type ? parseInt(this.stateParams.type) : undefined;
