@@ -96,7 +96,10 @@ export class WorkPackageRelationsAutocompleteComponent extends OpAutocompleterCo
     // https://github.com/ng-select/ng-select/issues/1259
     this.ngZone.runOutsideAngular(() => {
       setTimeout(() => {
-        this.ngSelectInstance.dropdownPanel.adjustPosition();
+        const dropdownPanel = typeof this.ngSelectInstance.dropdownPanel === 'function' 
+          ? this.ngSelectInstance.dropdownPanel() 
+          : this.ngSelectInstance.dropdownPanel;
+        dropdownPanel?.adjustPosition();
         jQuery(this.hiddenOverflowContainer).one('scroll', () => {
           this.ngSelectInstance.close();
         });

@@ -153,7 +153,12 @@ export class MultiSelectEditFieldComponent extends EditFieldComponent implements
 
   public repositionDropdown() {
     if (this.ngSelectComponent && this.ngSelectComponent.dropdownPanel) {
-      setTimeout(() => this.ngSelectComponent.dropdownPanel.adjustPosition(), 0);
+      setTimeout(() => {
+        const dropdownPanel = typeof this.ngSelectComponent.dropdownPanel === 'function' 
+          ? this.ngSelectComponent.dropdownPanel() 
+          : this.ngSelectComponent.dropdownPanel;
+        dropdownPanel?.adjustPosition();
+      }, 0);
     }
   }
 
