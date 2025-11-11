@@ -56,7 +56,7 @@ export default class MatchPreviewDialogController extends Controller {
 
   declare dialog:HTMLDialogElement;
   declare updateUrlValue:string;
-  declare updateMatchTimeout:ReturnType<typeof setTimeout>;
+  declare updateMatchTimeout:ReturnType<typeof window.setTimeout>;
 
   private pluginContextData:OpenProjectPluginContext|null = null;
 
