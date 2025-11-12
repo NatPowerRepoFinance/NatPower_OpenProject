@@ -53,16 +53,6 @@ module Projects
       validate_templated_set_by_admin
     end
 
-    attribute :project_code
-    attribute :project_financial_code
-    attribute :project_spv_name
-    attribute :project_site_name
-    attribute :project_status
-    attribute :project_stage
-    attribute :project_division
-    attribute :project_gis_object_id
-    attribute :project_gis_database_id
-
     validate :validate_user_allowed_to_manage
 
     def valid?(context = :saving_custom_fields) = super

@@ -73,7 +73,6 @@ module API
             mount ::API::V3::Projects::UpdateFormAPI
 
             mount API::V3::Projects::AvailableAssigneesAPI
-            mount ::API::V3::ProjectDetails::DetailsAPI
             mount API::V3::Projects::Copy::CopyAPI
             mount API::V3::WorkPackages::WorkPackagesByProjectAPI
             mount API::V3::Categories::CategoriesByProjectAPI

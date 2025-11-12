@@ -54,11 +54,6 @@ class Project < ApplicationRecord
     portfolio: "portfolio"
   }, validate: true
 
-  validates :project_status, inclusion: { in: -> { LookupProjectStatus.pluck(:label) }, allow_blank: false }
-  validates :project_stage, inclusion: { in: -> { LookupProjectStage.pluck(:label) }, allow_blank: false }
-  validates :project_division, inclusion: { in: -> { CompanyDivision.pluck(:code) }, allow_blank: false }
-  validates :project_spv_name, inclusion: { in: -> { LookupSpvNf.pluck(:spv_name) }, allow_blank: true }
-
   has_many :members, -> {
     # TODO: check whether this should
     # remain to be limited to User only
@@ -199,25 +194,7 @@ class Project < ApplicationRecord
 
   validates_associated :repository, :wiki
 
-  # Project Details validations
-  validates :project_code,
-            presence: true,
-            uniqueness: { case_sensitive: true },
-            format: { with: /\AP\d{4}\z/ }
-
-  validates :project_site_name,
-            length: { maximum: 50 },
-            allow_blank: true
-
-  validates :project_financial_code,
-            length: { maximum: 9 },
-            allow_blank: true
-
   friendly_id :identifier, use: :finders
-
-  before_validation :ensure_project_code, on: :create
-  before_validation :default_site_name, on: :create
-  before_validation :default_project_division, on: :create
 
   scopes :activated_in_storage,
          :allowed_to,
@@ -349,35 +326,5 @@ class Project < ApplicationRecord
     @allowed_actions ||= allowed_permissions.flat_map do |permission|
       OpenProject::AccessControl.allowed_actions(permission)
     end
-  end
-
-  private
-
-  def ensure_project_code
-    return if project_code.present?
-
-    last_numeric =
-      Project
-        .where("project_code ~ ?", '^P\\d{4}$')
-        .pluck(:project_code)
-        .map { |c| c.delete_prefix('P').to_i }
-        .max || 0
-
-    self.project_code = format('P%04d', last_numeric + 1)
-  end
-
-  def default_site_name
-    return if project_site_name.present?
-    return if name.blank?
-
-    self.project_site_name = name
-  end
-
-  def default_project_division
-    return if project_division.present?
-
-    # Set default to first available division if none selected
-    default_division = CompanyDivision.ordered.first&.code
-    self.project_division = default_division if default_division.present?
   end
 end
