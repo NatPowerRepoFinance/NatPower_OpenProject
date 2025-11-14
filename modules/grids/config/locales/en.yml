@@ -17,6 +17,11 @@ en:
           other: "and %{count} more members."
       news:
         no_results: "Nothing new to report."
+      gis_project:
+        title: "GIS Project"
+        no_data: "No GIS project data available."
+        no_external_project_id: "No external project ID configured."
+        no_api_key: "GIS API key not configured."
 
   activerecord:
     attributes:
