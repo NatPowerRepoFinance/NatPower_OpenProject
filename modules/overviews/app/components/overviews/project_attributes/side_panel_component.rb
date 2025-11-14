@@ -2,7 +2,7 @@
 
 #-- copyright
 # OpenProject is an open source project management software.
-# Copyright (C) the OpenProject GmbH
+# Copyright (C) 2010-2024 the OpenProject GmbH
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License version 3.
@@ -28,17 +28,37 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-module Grids
-  module Widgets
-    class ProjectStatus < Grids::WidgetComponent
+
+module Overviews
+  module ProjectAttributes
+    class SidePanelComponent < ApplicationComponent
       include ApplicationHelper
+      include OpPrimer::ComponentHelpers
       include OpTurbo::Streamable
 
-      param :project
+      ATTRIBUTES_TO_DISPLAY = %i[created_date last_updated deleted_date last_updated_date centroid external_project_id].freeze
 
-      def title
-        Project.human_attribute_name(:status)
+      def initialize(project:)
+        super
+
+        @project = project
+      end
+
+      def render?
+        User.current.allowed_in_project?(:view_project_attributes, @project) &&
+          has_attributes_to_display?
+      end
+
+      private
+
+      def has_attributes_to_display?
+        ATTRIBUTES_TO_DISPLAY.any? { |attr| @project.send(attr).present? }
+      end
+
+      def attributes_to_display
+        ATTRIBUTES_TO_DISPLAY.select { |attr| @project.send(attr).present? }
       end
     end
   end
 end
+

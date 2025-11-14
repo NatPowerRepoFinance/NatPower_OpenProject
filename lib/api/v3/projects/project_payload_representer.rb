@@ -35,7 +35,10 @@ module API
         cached_representer disabled: true
 
         def writable_attributes
-          super + %w[status]
+          # Use camelCase to match the 'as:' values in ProjectRepresenter
+          super + %w[
+            statusText createdDate lastUpdated deletedDate lastUpdatedDate centroid externalProjectId
+          ]
         end
       end
     end

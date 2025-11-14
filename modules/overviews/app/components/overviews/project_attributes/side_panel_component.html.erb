@@ -1,0 +1,31 @@
+<%=
+  component_wrapper do
+    if attributes_to_display.any?
+      render(
+        Primer::OpenProject::SidePanel.new(
+          spacious: true,
+          test_selector: "project-attributes-sidebar"
+        )
+      ) do |panel|
+        panel.with_section do |section|
+          section.with_title { t(:label_information) }
+
+          flex_layout do |details_container|
+            attributes_to_display.each_with_index do |attribute, index|
+              margin = index == attributes_to_display.size - 1 ? 0 : 3
+              details_container.with_row(mb: margin) do
+                render(
+                  Overviews::ProjectAttributes::ItemComponent.new(
+                    project: @project,
+                    attribute: attribute
+                  )
+                )
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+%>
+
