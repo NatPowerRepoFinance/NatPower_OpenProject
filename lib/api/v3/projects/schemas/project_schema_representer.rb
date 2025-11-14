@@ -109,6 +109,67 @@ module API
           schema :updated_at,
                  type: "DateTime"
 
+          # Local project attributes
+          # Note: Using 'statusText' as API name to avoid conflict with existing 'status' (which maps to status_code)
+          schema_with_allowed_collection :status,
+                                         type: "Integer",
+                                         name_source: ->(*) { I18n.t("activerecord.attributes.project.status") },
+                                         required: false,
+                                         writable: ->(*) { represented.writable?(:status) },
+                                         values_callback: ->(*) {
+                                           ProjectStatusLookup.all_statuses.pluck(:id)
+                                         },
+                                         value_representer: nil,
+                                         link_factory: ->(value) {
+                                           status_lookup = ProjectStatusLookup.find_by(id: value)
+                                           {
+                                             href: nil,
+                                             title: status_lookup&.label
+                                           }
+                                         },
+                                         as: :statusText
+
+          schema :created_date,
+                 type: "String",
+                 name_source: ->(*) { I18n.t("activerecord.attributes.project.created_date") },
+                 required: false,
+                 writable: ->(*) { represented.writable?(:created_date) },
+                 as: :createdDate
+
+          schema :last_updated,
+                 type: "String",
+                 name_source: ->(*) { I18n.t("activerecord.attributes.project.last_updated") },
+                 required: false,
+                 writable: ->(*) { represented.writable?(:last_updated) },
+                 as: :lastUpdated
+
+          schema :deleted_date,
+                 type: "String",
+                 name_source: ->(*) { I18n.t("activerecord.attributes.project.deleted_date") },
+                 required: false,
+                 writable: ->(*) { represented.writable?(:deleted_date) },
+                 as: :deletedDate
+
+          schema :last_updated_date,
+                 type: "String",
+                 name_source: ->(*) { I18n.t("activerecord.attributes.project.last_updated_date") },
+                 required: false,
+                 writable: ->(*) { represented.writable?(:last_updated_date) },
+                 as: :lastUpdatedDate
+
+          schema :centroid,
+                 type: "String",
+                 name_source: ->(*) { I18n.t("activerecord.attributes.project.centroid") },
+                 required: false,
+                 writable: ->(*) { represented.writable?(:centroid) }
+
+          schema :external_project_id,
+                 type: "String",
+                 name_source: ->(*) { I18n.t("activerecord.attributes.project.external_project_id") },
+                 required: false,
+                 writable: ->(*) { represented.writable?(:external_project_id) },
+                 as: :externalProjectId
+
           # Cannot be cached here due to custom field visibility checks on a user level.
           # However caching is still applied further down in the `section_representation` method.
           property :attribute_groups,

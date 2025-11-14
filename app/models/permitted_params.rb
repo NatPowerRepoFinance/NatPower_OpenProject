@@ -292,6 +292,9 @@ class PermittedParams
                                                 :templated,
                                                 :status_code,
                                                 :status_explanation,
+                                                :status,
+                                                :centroid,
+                                                :external_project_id,
                                                 work_package_custom_field_ids: [],
                                                 type_ids: [],
                                                 enabled_module_names: [])
@@ -303,7 +306,7 @@ class PermittedParams
 
   def new_project
     params
-      .expect(project: %i[name parent_id workspace_type])
+      .expect(project: %i[name parent_id workspace_type status centroid external_project_id])
       .merge(custom_field_values(:project))
   end
 
@@ -315,7 +318,7 @@ class PermittedParams
 
   def project_status
     params
-      .expect(project: %i[status_code status_explanation])
+      .expect(project: %i[status_code status_explanation status])
       .tap { nilify_params!(it, :status_code) }
   end
 

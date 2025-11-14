@@ -28,17 +28,19 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-module Grids
-  module Widgets
-    class ProjectStatus < Grids::WidgetComponent
-      include ApplicationHelper
-      include OpTurbo::Streamable
+class AddProjectNfAttributesToProjects < ActiveRecord::Migration[8.0]
+  def change
+    add_column :projects, :status, :string
+    add_column :projects, :created_date, :text
+    add_column :projects, :last_updated, :text
+    add_column :projects, :deleted_date, :text
+    add_column :projects, :last_updated_date, :text
+    add_column :projects, :centroid, :text
+    add_column :projects, :external_project_id, :string
 
-      param :project
-
-      def title
-        Project.human_attribute_name(:status)
-      end
-    end
+    # Index for status queries
+    add_index :projects, :status, name: "index_projects_on_status"
+    add_index :projects, :external_project_id
   end
 end
+

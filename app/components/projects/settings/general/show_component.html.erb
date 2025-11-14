@@ -52,15 +52,14 @@ See COPYRIGHT and LICENSE files for more details.
       settings_primer_form_with(model: project, url: project_settings_general_path(project)) do |f|
         concat(
           render(Primer::Beta::Subhead.new) do |component|
-            component.with_heading(tag: :h3, size: :medium) { I18n.t("projects.settings.header_status") }
+            component.with_heading(tag: :h3, size: :medium) { I18n.t("projects.settings.header_relations") }
           end
         )
         concat(
           render(
             Primer::Forms::FormList.new(
-              Projects::StatusButtonComponent.new(project:, user: current_user),
-              Projects::Settings::StatusForm.new(f),
-              Projects::Settings::Submit.new(f, label: I18n.t("projects.settings.button_update_status_description"))
+              Projects::Settings::RelationsForm.new(f),
+              Projects::Settings::Submit.new(f, label: I18n.t("projects.settings.button_update_parent_project"))
             )
           )
         )
@@ -71,14 +70,14 @@ See COPYRIGHT and LICENSE files for more details.
       settings_primer_form_with(model: project, url: project_settings_general_path(project)) do |f|
         concat(
           render(Primer::Beta::Subhead.new) do |component|
-            component.with_heading(tag: :h3, size: :medium) { I18n.t("projects.settings.header_relations") }
+            component.with_heading(tag: :h3, size: :medium) { "Additional Project Attributes" }
           end
         )
         concat(
           render(
             Primer::Forms::FormList.new(
-              Projects::Settings::RelationsForm.new(f),
-              Projects::Settings::Submit.new(f, label: I18n.t("projects.settings.button_update_parent_project"))
+              Projects::Settings::AdditionalAttributesForm.new(f),
+              Projects::Settings::Submit.new(f, label: I18n.t("projects.settings.button_update_details"))
             )
           )
         )

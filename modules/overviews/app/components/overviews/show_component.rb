@@ -48,7 +48,7 @@ module Overviews
     private
 
     def sidebar_enabled?
-      life_cycle_sidebar_enabled? || custom_fields_sidebar_enabled?
+      life_cycle_sidebar_enabled? || custom_fields_sidebar_enabled? || project_attributes_sidebar_enabled?
     end
 
     def life_cycle_sidebar_enabled?
@@ -61,6 +61,19 @@ module Overviews
       @custom_fields_sidebar_enabled ||=
         current_user.allowed_in_project?(:view_project_attributes, project) &&
         project.project_custom_fields.visible.any?
+    end
+
+    def project_attributes_sidebar_enabled?
+      @project_attributes_sidebar_enabled ||=
+        current_user.allowed_in_project?(:view_project_attributes, project) &&
+        project_attributes_to_display.any?
+    end
+
+    def project_attributes_to_display
+      @project_attributes_to_display ||=
+        Overviews::ProjectAttributes::SidePanelComponent::ATTRIBUTES_TO_DISPLAY.select do |attr|
+          project.send(attr).present?
+        end
     end
 
     def render_sidebar_turbo_frame(*ids, src: nil, target: nil, **attributes)

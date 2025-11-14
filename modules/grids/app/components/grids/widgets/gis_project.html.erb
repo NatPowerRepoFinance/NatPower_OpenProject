@@ -1,0 +1,41 @@
+<%=
+  widget_wrapper do
+    Rails.logger.info("GIS Project widget template: gis_data present?=#{gis_data.present?}, gis_data=#{gis_data.inspect}")
+    
+    if gis_data.present?
+      # Flatten the data structure to show each attribute as a separate field
+      flattened_data = flattened_gis_data
+      Rails.logger.info("GIS Project widget template: flattened_data present?=#{flattened_data.present?}, size=#{flattened_data.size}, keys=#{flattened_data.keys.inspect}")
+      
+      if flattened_data.present? && flattened_data.any?
+        # Use CSS Grid to display 2-3 fields per row
+        content_tag(:div, class: "gis-project-fields-grid", style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--base-size-16, 16px);") do
+          flattened_data.each do |field_label, field_value|
+            concat(
+              render(Primer::Alpha::FormControl.new(label: field_label)) do |control|
+                control.with_input do
+                  content_tag(:input, nil, {
+                    type: "text",
+                    value: format_value_for_display(field_value),
+                    readonly: true,
+                    class: "FormControl-input input--readonly",
+                    id: "gis_#{field_label.parameterize.underscore}"
+                  })
+                end
+              end
+            )
+          end
+          nil
+        end
+      else
+        render(Primer::Beta::Text.new(color: :subtle)) { t(".no_data") }
+      end
+    elsif project&.external_project_id.blank?
+      render(Primer::Beta::Text.new(color: :subtle)) { t(".no_external_project_id") }
+    elsif ENV["GIS_API_KEY"].blank?
+      render(Primer::Beta::Text.new(color: :subtle)) { t(".no_api_key") }
+    else
+      render(Primer::Beta::Text.new(color: :subtle)) { t(".no_data") }
+    end
+  end
+%>

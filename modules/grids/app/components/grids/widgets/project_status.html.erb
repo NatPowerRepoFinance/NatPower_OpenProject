@@ -32,11 +32,11 @@ See COPYRIGHT and LICENSE files for more details.
     component_wrapper do
       flex_layout do |flex|
         flex.with_row(mb: 3) do
-          render(Projects::StatusButtonComponent.new(project:, user: current_user, hide_help_text: true))
+          render(Projects::StatusLookupButtonComponent.new(project:, user: current_user, hide_help_text: true))
         end
 
         flex.with_row do
-          format_text(project, :status_explanation)
+          format_text(project, :status_explanation) if project.status_explanation.present?
         end
       end
     end
