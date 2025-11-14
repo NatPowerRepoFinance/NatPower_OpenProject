@@ -28,5 +28,15 @@ export interface IProject {
   createdAt:string;
   updatedAt:string;
 
+  // Local project attributes
+  statusText?:number; // Note: Renamed from 'status' to avoid conflict with existing 'status' (ProjectStatus). Value is ID from ProjectStatusLookup
+  statusLabel?:string; // Read-only label for statusText
+  createdDate?:string;
+  lastUpdated?:string;
+  deletedDate?:string;
+  lastUpdatedDate?:string;
+  centroid?:string;
+  externalProjectId?:string;
+
   _links:IProjectHalResourceLinks;
 }

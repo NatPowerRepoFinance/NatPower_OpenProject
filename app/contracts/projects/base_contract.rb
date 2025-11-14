@@ -53,6 +53,16 @@ module Projects
       validate_templated_set_by_admin
     end
 
+    attribute :status do
+      validate_status_in_lookup_table
+    end
+    attribute :created_date
+    attribute :last_updated
+    attribute :deleted_date
+    attribute :last_updated_date
+    attribute :centroid
+    attribute :external_project_id
+
     validate :validate_user_allowed_to_manage
 
     def valid?(context = :saving_custom_fields) = super
@@ -141,6 +151,14 @@ module Projects
       contract = contract_klass.new(model, user)
 
       validate_and_merge_errors(contract)
+    end
+
+    def validate_status_in_lookup_table
+      return if model.status.nil? || model.status.blank?
+
+      unless ProjectStatusLookup.exists?(id: model.status)
+        errors.add(:status, :inclusion, message: "must be a valid status ID from ProjectStatusLookup")
+      end
     end
 
     def all_available_custom_fields
