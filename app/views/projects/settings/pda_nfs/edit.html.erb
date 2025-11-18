@@ -1,0 +1,176 @@
+<%#-- copyright
+OpenProject is an open source project management software.
+Copyright (C) the OpenProject GmbH
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 3.
+
+OpenProject is a fork of ChiliProject, which is a fork of Redmine. The copyright follows:
+Copyright (C) 2006-2013 Jean-Philippe Lang
+Copyright (C) 2010-2013 the ChiliProject Team
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+See COPYRIGHT and LICENSE files for more details.
+
+++#%>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Edit PDA" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nfs_path(@project.id), text: "PDAs" },
+       "Edit PDA"]
+    )
+  end
+%>
+
+<% if @pda_nf.errors.any? %>
+  <%= error_messages_for(@pda_nf) %>
+<% end %>
+
+<%= labelled_tabular_form_for @pda_nf,
+                              url: project_settings_pda_nf_path(@project, @pda_nf),
+                              html: { class: "form", method: :patch } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">PDA Information</legend>
+    
+    <div class="form--field -required">
+      <%= f.text_field :pda_id,
+                        required: true,
+                        container_class: "-middle",
+                        label: "PDA ID" %>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.text_field :initial_code,
+                        required: true,
+                        container_class: "-middle",
+                        label: "Initial Code" %>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.text_field :code,
+                        required: true,
+                        container_class: "-middle",
+                        label: "Code" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :project_manager_guid,
+                        container_class: "-middle",
+                        label: "Project Manager GUID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :planning_manager_guid,
+                        container_class: "-middle",
+                        label: "Planning Manager GUID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :land_manager_guid,
+                        container_class: "-middle",
+                        label: "Land Manager GUID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :senior_dev_manager_guid,
+                        container_class: "-middle",
+                        label: "Senior Dev Manager GUID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_area :technology,
+                      rows: 3,
+                      container_class: "-middle",
+                      label: "Technology" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :mw_bess,
+                        container_class: "-middle",
+                        label: "MW BESS",
+                        type: "number",
+                        step: "0.01" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :mw_solar,
+                        container_class: "-middle",
+                        label: "MW Solar",
+                        type: "number",
+                        step: "0.01" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :mw_wind,
+                        container_class: "-middle",
+                        label: "MW Wind",
+                        type: "number",
+                        step: "0.01" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :mw_hydrogen,
+                        container_class: "-middle",
+                        label: "MW Hydrogen",
+                        type: "number",
+                        step: "0.01" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :mw_hydroelectric,
+                        container_class: "-middle",
+                        label: "MW Hydroelectric",
+                        type: "number",
+                        step: "0.01" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :mw_other,
+                        container_class: "-middle",
+                        label: "MW Other",
+                        type: "number",
+                        step: "0.01" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :mw_other_description,
+                        container_class: "-middle",
+                        label: "MW Other Description" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.check_box :custom_substation,
+                      container_class: "-middle",
+                      label: "Custom Substation" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.check_box :transmisson_substation,
+                      container_class: "-middle",
+                      label: "Transmission Substation" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_save), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel), project_settings_general_path(@project), class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+

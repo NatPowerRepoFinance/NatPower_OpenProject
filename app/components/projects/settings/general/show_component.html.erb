@@ -83,5 +83,80 @@ See COPYRIGHT and LICENSE files for more details.
         )
       end
     end
+
+    container.with_row(mb: 3) do
+      concat(
+        render(Primer::Beta::Subhead.new) do |component|
+          component.with_heading(tag: :h3, size: :medium) { "PDAs" }
+        end
+      )
+      
+      concat(
+        flex_layout(mb: 2) do |flex|
+          flex.with_row do
+            render(Primer::Beta::Button.new(
+              scheme: :primary,
+              leading_icon: :plus,
+              tag: :a,
+              href: new_project_settings_pda_nf_path(project)
+            )) { "Add PDA" }
+          end
+        end
+      )
+
+      if project.pda_nfs.any?
+        concat(
+          flex_layout(mt: 2) do |flex|
+            project.pda_nfs.order(created_date: :desc).each do |pda_nf|
+              flex.with_row(mb: 2) do
+                render(Primer::Beta::BorderBox.new) do |box|
+                  box.with_row do
+                    flex_layout do |pda_flex|
+                      pda_flex.with_column(flex: 1) do
+                        render(Primer::Beta::Text.new(font_weight: :semibold)) { "PDA ID: #{pda_nf.pda_id}" }
+                      end
+                      pda_flex.with_column(flex: 1) do
+                        render(Primer::Beta::Text.new) { "Code: #{pda_nf.code}" }
+                      end
+                      pda_flex.with_column(flex: 1) do
+                        render(Primer::Beta::Text.new) { "Technology: #{pda_nf.technology}" if pda_nf.technology.present? }
+                      end
+                      pda_flex.with_column(shrink: true) do
+                        flex_layout do |actions|
+                          actions.with_column(mr: 1) do
+                            render(Primer::Beta::Button.new(
+                              scheme: :default,
+                              size: :small,
+                              tag: :a,
+                              href: edit_project_settings_pda_nf_path(project, pda_nf)
+                            )) { "Edit" }
+                          end
+                          actions.with_column do
+                            render(Primer::Beta::Button.new(
+                              scheme: :danger,
+                              size: :small,
+                              tag: :a,
+                              href: project_settings_pda_nf_path(project, pda_nf),
+                              data: {
+                                turbo_method: :delete,
+                                turbo_confirm: I18n.t(:text_are_you_sure)
+                              }
+                            )) { "Delete" }
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        )
+      else
+        concat(
+          render(Primer::Beta::Text.new(color: :subtle)) { "No PDAs added yet." }
+        )
+      end
+    end
   end
 %>

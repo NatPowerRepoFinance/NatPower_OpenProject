@@ -35,6 +35,7 @@ module Projects
         include ApplicationHelper
         include OpPrimer::ComponentHelpers
         include OpTurbo::Streamable
+        include Rails.application.routes.url_helpers
 
         attr_reader :project, :current_user
 

@@ -22,6 +22,9 @@ en:
         no_data: "No GIS project data available."
         no_external_project_id: "No external project ID configured."
         no_api_key: "GIS API key not configured."
+      pdas:
+        title: "PDAs"
+        no_pdas: "No PDAs added yet."
 
   activerecord:
     attributes:

@@ -302,6 +302,7 @@ Rails.application.routes.draw do
         resource :repository, only: %i[show], controller: "repository"
         resource :versions, only: %i[show]
         resource :storage, only: %i[show], controller: "storage"
+        resources :pda_nfs, only: %i[show new create edit update destroy]
         get :types, to: redirect("projects/%{project_id}/settings/work_packages/types")
         get :custom_fields, to: redirect("projects/%{project_id}/settings/work_packages/custom_fields")
         get :categories, to: redirect("projects/%{project_id}/settings/work_packages/categories")
