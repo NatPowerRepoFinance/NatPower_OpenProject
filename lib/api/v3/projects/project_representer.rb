@@ -231,6 +231,34 @@ module API
         formattable_property :status_explanation,
                              cache_if: current_user_view_allowed_lambda
 
+        # Local project attributes (using camelCase for frontend consistency)
+        # Note: Using 'statusText' as API name to avoid conflict with existing 'status' (which maps to status_code)
+        property :status,
+                 render_nil: true,
+                 exec_context: :decorator,
+                 getter: ->(*) {
+                   represented.status
+                 },
+                 setter: ->(fragment:, represented:, **) {
+                   represented.status = fragment
+                 },
+                 as: :statusText
+
+        # Status label (read-only)
+        property :status_label,
+                 exec_context: :decorator,
+                 render_nil: true,
+                 getter: ->(*) {
+                   represented.project_status_lookup&.label
+                 },
+                 as: :statusLabel
+        property :created_date, render_nil: true, as: :createdDate
+        property :last_updated, render_nil: true, as: :lastUpdated
+        property :deleted_date, render_nil: true, as: :deletedDate
+        property :last_updated_date, render_nil: true, as: :lastUpdatedDate
+        property :centroid, render_nil: true
+        property :external_project_id, render_nil: true, as: :externalProjectId
+
         def _type
           "Project"
         end

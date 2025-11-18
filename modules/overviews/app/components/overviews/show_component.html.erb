@@ -52,6 +52,12 @@ See COPYRIGHT and LICENSE files for more details.
           )
         )
       end
+
+      if project_attributes_sidebar_enabled?
+        concat(
+          render(Overviews::ProjectAttributes::SidePanelComponent.new(project:))
+        )
+      end
     end
 
     if OpenProject::FeatureDecisions.new_project_overview_active?

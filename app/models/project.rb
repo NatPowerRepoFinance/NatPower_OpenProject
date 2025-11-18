@@ -54,6 +54,8 @@ class Project < ApplicationRecord
     portfolio: "portfolio"
   }, validate: true
 
+  belongs_to :project_status_lookup, class_name: 'ProjectStatusLookup', foreign_key: :status, optional: true
+
   has_many :members, -> {
     # TODO: check whether this should
     # remain to be limited to User only
@@ -325,6 +327,22 @@ class Project < ApplicationRecord
   def allowed_actions
     @allowed_actions ||= allowed_permissions.flat_map do |permission|
       OpenProject::AccessControl.allowed_actions(permission)
+    end
+  end
+
+  # Update timestamps
+  before_save :update_timestamps
+
+  private
+
+  def update_timestamps
+    if last_updated_changed? || changed?
+      self.last_updated = Time.current.to_s
+      self.last_updated_date = Time.current.to_s
+    end
+
+    if new_record? && created_date.blank?
+      self.created_date = Time.current.to_s
     end
   end
 end
