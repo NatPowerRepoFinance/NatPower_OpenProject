@@ -104,8 +104,10 @@ class Project < ApplicationRecord
            inverse_of: :project
 
   has_many :recurring_meetings, dependent: :destroy
+  has_many :pda_nfs, class_name: "PdaNf", foreign_key: "project_id", dependent: :destroy
 
   accepts_nested_attributes_for :available_phases
+  accepts_nested_attributes_for :pda_nfs, allow_destroy: true, reject_if: :all_blank
   validates_associated :available_phases, on: :saving_phases
 
   store_attribute :settings, :deactivate_work_package_attachments, :boolean
