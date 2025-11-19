@@ -710,7 +710,8 @@ Redmine::MenuManager.map :project_menu do |menu|
     versions: { caption: :label_version_plural },
     repository: { caption: :label_repository },
     time_entry_activities: { caption: :enumeration_activities },
-    storage: { caption: :label_required_disk_storage }
+    storage: { caption: :label_required_disk_storage },
+    pda_nfs: { caption: "PDAs" }
   }
 
   project_menu_items.each do |key, options|

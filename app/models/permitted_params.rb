@@ -297,7 +297,28 @@ class PermittedParams
                                                 :external_project_id,
                                                 work_package_custom_field_ids: [],
                                                 type_ids: [],
-                                                enabled_module_names: [])
+                                                enabled_module_names: [],
+                                                pda_nfs_attributes: [
+                                                  :id,
+                                                  :pda_id,
+                                                  :initial_code,
+                                                  :code,
+                                                  :project_manager_guid,
+                                                  :planning_manager_guid,
+                                                  :land_manager_guid,
+                                                  :mw_bess,
+                                                  :mw_solar,
+                                                  :mw_wind,
+                                                  :mw_hydrogen,
+                                                  :mw_other,
+                                                  :mw_other_description,
+                                                  :technology,
+                                                  :senior_dev_manager_guid,
+                                                  :custom_substation,
+                                                  :transmisson_substation,
+                                                  :mw_hydroelectric,
+                                                  :_destroy
+                                                ])
 
     whitelist
       .tap { nilify_params!(it, :status_code) }
@@ -306,7 +327,33 @@ class PermittedParams
 
   def new_project
     params
-      .expect(project: %i[name parent_id workspace_type status centroid external_project_id])
+      .expect(project: [
+        :name,
+        :parent_id,
+        :workspace_type,
+        :status,
+        :centroid,
+        :external_project_id,
+        { pda_nfs_attributes: [
+          :pda_id,
+          :initial_code,
+          :code,
+          :project_manager_guid,
+          :planning_manager_guid,
+          :land_manager_guid,
+          :mw_bess,
+          :mw_solar,
+          :mw_wind,
+          :mw_hydrogen,
+          :mw_other,
+          :mw_other_description,
+          :technology,
+          :senior_dev_manager_guid,
+          :custom_substation,
+          :transmisson_substation,
+          :mw_hydroelectric
+        ] }
+      ])
       .merge(custom_field_values(:project))
   end
 

@@ -1,0 +1,71 @@
+<%=
+  widget_wrapper do |container|
+    if pda_nfs.any?
+      container.with_row do
+        content_tag(:div, class: "generic-table--container") do
+          content_tag(:div, class: "generic-table--results-container") do
+            content_tag(:table, class: "generic-table") do
+              concat(
+                content_tag(:thead) do
+                  content_tag(:tr) do
+                    concat(content_tag(:th) { "ID" })
+                    concat(content_tag(:th) { "PDA ID" })
+                    concat(content_tag(:th) { "Code" })
+                    concat(content_tag(:th) { "Actions" })
+                  end
+                end
+              )
+              concat(
+                content_tag(:tbody) do
+                  pda_nfs.each_with_index do |pda_nf, index|
+                    concat(
+                      content_tag(:tr) do
+                        concat(
+                          content_tag(:td) do
+                            link_to(index + 1, project_settings_pda_nf_path(project, pda_nf))
+                          end
+                        )
+                        concat(content_tag(:td, pda_nf.pda_id.to_s))
+                        concat(content_tag(:td, pda_nf.code.to_s))
+                        concat(
+                          content_tag(:td, class: "buttons") do
+                            flex_layout do |actions|
+                              actions.with_column(mr: 1) do
+                                render(Primer::Beta::Button.new(
+                                  scheme: :default,
+                                  size: :small,
+                                  tag: :a,
+                                  href: edit_project_settings_pda_nf_path(project, pda_nf)
+                                )) { "Edit" }
+                              end
+                              actions.with_column do
+                                render(Primer::Beta::Button.new(
+                                  scheme: :danger,
+                                  size: :small,
+                                  tag: :a,
+                                  href: project_settings_pda_nf_path(project, pda_nf),
+                                  data: {
+                                    turbo_method: :delete,
+                                    turbo_confirm: I18n.t(:text_are_you_sure)
+                                  }
+                                )) { "Delete" }
+                              end
+                            end
+                          end
+                        )
+                      end
+                    )
+                  end
+                end
+              )
+            end
+          end
+        end
+      end
+    else
+      container.with_row do
+        render(Primer::Beta::Text.new(color: :subtle)) { t(".no_pdas") }
+      end
+    end
+  end
+%>
