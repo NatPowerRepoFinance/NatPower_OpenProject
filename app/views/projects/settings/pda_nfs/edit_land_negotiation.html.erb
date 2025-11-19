@@ -1,0 +1,94 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Edit Land Negotiation" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       "Edit Land Negotiation ##{@land_negotiation.id}"]
+    )
+  end
+%>
+
+<% if @land_negotiation.errors.any? %>
+  <%= error_messages_for(@land_negotiation) %>
+<% end %>
+
+<%= labelled_tabular_form_for @land_negotiation,
+                              url: update_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
+                              html: { class: "form" } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Negotiation Information</legend>
+    
+    <div class="form--field">
+      <%= f.text_field :land_negotiation_id,
+                        container_class: "-middle",
+                        label: "Land Negotiation ID",
+                        type: "number" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :code,
+                        container_class: "-middle",
+                        label: "Code" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :name,
+                        container_class: "-middle",
+                        label: "Name" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :friendly_name,
+                        container_class: "-middle",
+                        label: "Friendly Name" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :contract_status,
+                         container_class: "-middle",
+                         label: "Contract Status" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :negotiation_status,
+                         container_class: "-middle",
+                         label: "Negotiation Status" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :success_rating,
+                        container_class: "-middle",
+                        label: "Success Rating" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.date_field :estimated_completion,
+                        container_class: "-middle",
+                        label: "Estimated Completion" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :budget_id,
+                        container_class: "-middle",
+                        label: "Budget ID",
+                        type: "number" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.select :status,
+                    options_for_select([["Active", "active"], ["Inactive", "inactive"]], @land_negotiation.status || "active"),
+                    { container_class: "-middle", label: "Status" } %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_save), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel),
+                  show_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
+                  class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+
+

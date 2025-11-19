@@ -1,0 +1,117 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Land Negotiation" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       "Land Negotiation ##{@land_negotiation.id}"]
+    )
+  end
+%>
+
+<div class="generic-form">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Negotiation Details</legend>
+
+    <div class="form--field">
+      <label class="form--label">ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_negotiation.id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Land Negotiation ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_negotiation.land_negotiation_id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Code</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= h(@land_negotiation.code) if @land_negotiation.code.present? %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Name</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= h(@land_negotiation.name) if @land_negotiation.name.present? %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Friendly Name</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= h(@land_negotiation.friendly_name) if @land_negotiation.friendly_name.present? %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Contract Status</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_negotiation.contract_status %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Negotiation Status</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_negotiation.negotiation_status %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Success Rating</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= h(@land_negotiation.success_rating) if @land_negotiation.success_rating.present? %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Estimated Completion</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_negotiation.estimated_completion&.strftime("%B %d, %Y") %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Status</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= h(@land_negotiation.status) if @land_negotiation.status.present? %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Budget ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_negotiation.budget_id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label"><%= t(:label_created_on) %></label>
+      <div class="form--field-container">
+        <input type="text" value="<%= format_time(@land_negotiation.created_date) if @land_negotiation.created_date %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <%= link_to t(:button_edit),
+                  edit_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
+                  class: "button -primary" %>
+      <%= link_to t(:button_delete),
+                  destroy_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
+                  data: {
+                    turbo_method: :delete,
+                    turbo_confirm: t(:text_are_you_sure)
+                  },
+                  class: "button -secondary -with-icon icon-delete" %>
+      <%= link_to t(:button_back), project_settings_pda_nf_path(@project, @pda_nf), class: "button" %>
+    </div>
+  </fieldset>
+</div>
+
+
