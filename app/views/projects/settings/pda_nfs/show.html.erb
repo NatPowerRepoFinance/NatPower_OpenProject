@@ -218,6 +218,74 @@ end %>
     </fieldset>
   </div>
 
+  <%# Land Negotiations Section %>
+  <div class="generic-form" style="margin-top: 2rem;">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend">
+        Land Negotiations
+        <div class="form--toolbar">
+          <span class="form--toolbar-item">
+            <%= link_to "Add Land Negotiation",
+                        new_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf),
+                        class: "button -primary" %>
+          </span>
+        </div>
+      </legend>
+      
+      <%# Display existing land negotiations %>
+      <% if @land_negotiations.present? && @land_negotiations.any? %>
+        <div class="generic-table--container" style="margin-bottom: 2rem;">
+          <div class="generic-table--results-container">
+            <table class="generic-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Land Negotiation ID</th>
+                  <th>Code</th>
+                  <th>Friendly Name</th>
+                  <th>Estimated Completion</th>
+                  <th>Status</th>
+                  <th>Created Date</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @land_negotiations.each do |ln| %>
+                  <tr>
+                    <td>
+                      <%= link_to ln.id,
+                                  show_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: ln.id) %>
+                    </td>
+                    <td><%= ln.land_negotiation_id if ln.land_negotiation_id.present? %></td>
+                    <td><%= h(ln.code) if ln.code.present? %></td>
+                    <td><%= h(ln.friendly_name) if ln.friendly_name.present? %></td>
+                    <td><%= ln.estimated_completion.strftime("%B %d, %Y") if ln.estimated_completion.present? %></td>
+                    <td><%= h(ln.status) if ln.status.present? %></td>
+                    <td><%= format_time(ln.created_date) if ln.created_date %></td>
+                    <td class="buttons">
+                      <%= link_to "",
+                                  edit_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: ln.id),
+                                  class: "icon icon-edit",
+                                  title: t(:button_edit) %>
+                      <%= link_to "",
+                                  destroy_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: ln.id),
+                                  data: {
+                                    turbo_method: :delete,
+                                    turbo_confirm: t(:text_are_you_sure)
+                                  },
+                                  class: "icon icon-delete",
+                                  title: t(:button_delete) %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+    </fieldset>
+  </div>
+
   <%# Display API Data %>
   <% if @pda_api_data.present? %>
     <div class="generic-form" style="margin-top: 2rem;">
