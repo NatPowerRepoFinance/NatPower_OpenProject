@@ -92,11 +92,11 @@
       </div>
 
       <div class="form--field">
-        <%= f.label :status, "Status", class: "form--label" %>
+        <%= f.label :status, "Status ID", class: "form--label" %>
         <div class="form--field-container">
-          <%= f.text_field :status,
-                           value: @contract_form["status"],
-                           class: "form--text-field" %>
+          <%= f.number_field :status,
+                             value: @contract_form["status"],
+                             class: "form--text-field" %>
         </div>
       </div>
 

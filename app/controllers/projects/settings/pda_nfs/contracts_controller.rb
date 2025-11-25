@@ -32,7 +32,7 @@ class Projects::Settings::PdaNfs::ContractsController < Projects::Settings::PdaN
 
     if response && response.status == 200
       flash[:notice] = "Contract request submitted to the GIS API."
-      redirect_to project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation)
+      redirect_to project_settings_pda_nf_path(@project, @pda_nf)
     else
       error_message = response ? "API responded with status #{response.status} #{extract_api_error(response)}" : "Request failed before reaching the API"
       flash.now[:error] = "Unable to create contract via API. #{error_message}."
@@ -90,38 +90,59 @@ class Projects::Settings::PdaNfs::ContractsController < Projects::Settings::PdaN
       "landNegotiationId" => @api_negotiation_id || land_negotiation.land_negotiation_id || land_negotiation.id,
       "pdaId" => pda_nf.pda_id || pda_nf.id,
       "projectId" => @project.external_project_id || @project.id,
-      "status" => "ACTIVE"
+      # The ERP API expects the numeric status ID, not the label.
+      # Default to 1 (e.g., ACTIVE) – this can be overridden in the form.
+      "status" => 1
     }
   end
 
   def submit_contract_creation_request(form_values, uploaded_file)
-    payload = form_values.transform_values { |value| value.is_a?(String) ? value.strip : value }
-                          .reject { |_, value| value.blank? }
+    payload = normalize_contract_payload(form_values)
 
     body, content_type = build_request_body(payload, uploaded_file)
     return nil unless body.present?
 
     url = "https://natpower-gis-project-dev.azurewebsites.net/erp/contract/create"
-    Rails.logger.info("[PDA Contracts] POST #{url} headers=#{headers_summary(content_type)} payload={request: #{payload}} file=#{uploaded_file.present? ? uploaded_file.original_filename : 'none'}")
-    Rails.logger.info("[PDA Contracts] cURL example: #{curl_example(url, payload, uploaded_file, content_type)}")
+    Rails.logger.info("[PDA Contracts] POST #{url} content_type=#{content_type} payload={request: #{payload}} file=#{uploaded_file.present? ? uploaded_file.original_filename : 'none'}")
     OpenProject.httpx.with(
       headers: {
         "X-Access-Token" => api_key,
         "Content-Type" => content_type
       }
     ).post(url, body: body).tap do |response|
-
-      debugger
       Rails.logger.info("[PDA Contracts] Response status=#{response.status}")
-      if response.status >= 400
-        Rails.logger.warn("[PDA Contracts] Response body: #{truncate_body(response.to_s)}")
-      end
     end
   rescue StandardError => e
-    debugger
     Rails.logger.error("Failed to create negotiation contract via API: #{e.message}")
     Rails.logger.error("Contract API backtrace: #{e.backtrace.first(5).join("\n")}")
     nil
+  end
+
+  def normalize_contract_payload(form_values)
+    values = form_values.to_h.with_indifferent_access
+
+    payload = values.transform_values { |value| value.is_a?(String) ? value.strip : value }
+                    .reject { |_, value| value.blank? }
+
+    integer_keys = %w[
+      landNegotiationId
+      pdaId
+      projectId
+      status
+      contractTypeId
+      initialExpiryNoticePeriodDays
+      extensionPeriod
+    ]
+
+    integer_keys.each do |key|
+      raw = payload[key]
+      next if raw.nil?
+      if raw.is_a?(String) && raw.match?(/\A-?\d+\z/)
+        payload[key] = raw.to_i
+      end
+    end
+
+    payload
   end
 
   def extract_api_error(response)
@@ -133,7 +154,7 @@ class Projects::Settings::PdaNfs::ContractsController < Projects::Settings::PdaN
       detail = json["message"] || json["error"] || json["detail"]
       return "- #{detail}" if detail.present?
     rescue JSON::ParserError
-      
+    
     end
 
     snippet = body.strip
@@ -146,7 +167,6 @@ class Projects::Settings::PdaNfs::ContractsController < Projects::Settings::PdaN
 
     body << "--#{boundary}\r\n"
     body << %(Content-Disposition: form-data; name="request"\r\n\r\n)
-    
     body << payload.to_json
     body << "\r\n"
 
@@ -154,8 +174,6 @@ class Projects::Settings::PdaNfs::ContractsController < Projects::Settings::PdaN
       uploaded_file.tempfile.binmode
       uploaded_file.rewind
       body << "--#{boundary}\r\n"
-      # The ERP API expects the file field to be called `file`,
-      # matching: --form 'file=@"/path/to/file.pdf"'
       body << %(Content-Disposition: form-data; name="file"; filename="#{uploaded_file.original_filename}"\r\n)
       body << "Content-Type: #{uploaded_file.content_type || 'application/octet-stream'}\r\n\r\n"
       body << uploaded_file.read
@@ -169,34 +187,6 @@ class Projects::Settings::PdaNfs::ContractsController < Projects::Settings::PdaN
     [nil, nil]
   ensure
     uploaded_file&.rewind
-  end
-
-  def curl_example(url, payload, uploaded_file, content_type)
-    if uploaded_file.present?
-      <<~CURL.strip
-        curl --location '#{url}' \\
-          --header 'X-Access-Token: #{api_key.present? ? 'YOUR_TOKEN' : '[missing]'}' \\
-          --form 'request="#{payload.to_json.gsub("'", %q(\\\'))}"' \\
-          --form 'file=@"/path/to/#{uploaded_file.original_filename}"'
-      CURL
-    else
-      <<~CURL.strip
-        curl --location '#{url}' \\
-          --header 'X-Access-Token: #{api_key.present? ? 'YOUR_TOKEN' : '[missing]'}' \\
-          --form 'request="#{payload.to_json.gsub("'", %q(\\\'))}"'
-      CURL
-    end
-  end
-
-  def headers_summary(content_type)
-    {
-      "X-Access-Token" => api_key.present? ? "[present]" : "[missing]",
-      "Content-Type" => content_type
-    }
-  end
-
-  def truncate_body(text, limit = 500)
-    text.length > limit ? "#{text[0, limit]}..." : text
   end
 end
 
