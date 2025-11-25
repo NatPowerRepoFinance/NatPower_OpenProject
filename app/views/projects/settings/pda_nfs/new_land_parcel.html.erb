@@ -1,0 +1,42 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Add Land Parcel" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       "Add Land Parcel"]
+    )
+  end
+%>
+
+<% if @land_parcel.errors.any? %>
+  <%= error_messages_for(@land_parcel) %>
+<% end %>
+
+<%= labelled_tabular_form_for @land_parcel,
+                              url: create_land_parcel_project_settings_pda_nf_path(@project, @pda_nf),
+                              html: { class: "form" } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Parcel Information</legend>
+    
+    <div class="form--field">
+      <%= f.number_field :land_parcel_id,
+                        container_class: "-middle",
+                        label: "Land Parcel ID",
+                        required: true %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :land_parcel_code,
+                        container_class: "-middle",
+                        label: "Land Parcel Code" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_create), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel), project_settings_pda_nf_path(@project, @pda_nf), class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+

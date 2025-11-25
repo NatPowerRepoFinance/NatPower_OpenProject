@@ -10,6 +10,9 @@ class PdaNf < ApplicationRecord
   validates :code, presence: true, length: { maximum: 255 }
 
   has_many :land_negotiation_nfs, foreign_key: "pda_id", dependent: :destroy
+  has_many :land_negotiation_pda_link_nfs, class_name: "LandNegotiationPdaLinkNf", foreign_key: "pda_id", dependent: :destroy
+  has_many :linked_land_negotiations, through: :land_negotiation_pda_link_nfs, source: :land_negotiation_nf
+  has_many :land_parcels, class_name: "LandParcelNf", foreign_key: "pda_id", dependent: :destroy
 
   scope :for_project, ->(project) { where(project_id: project.id) }
 
