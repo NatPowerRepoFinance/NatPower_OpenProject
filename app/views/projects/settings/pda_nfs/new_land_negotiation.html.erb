@@ -44,7 +44,7 @@ See COPYRIGHT and LICENSE files for more details.
 <% end %>
 
 <%= labelled_tabular_form_for @land_negotiation,
-                              url: create_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf),
+                              url: project_settings_pda_nf_negotiations_path(@project, @pda_nf),
                               html: { class: "form" } do |f| %>
   <fieldset class="form--fieldset">
     <legend class="form--fieldset-legend">Land Negotiation Information</legend>

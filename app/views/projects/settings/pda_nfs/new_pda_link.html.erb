@@ -1,0 +1,37 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Add PDA Link" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       { href: project_settings_pda_nf_negotiation_path(@project.id, @pda_nf.id, @land_negotiation.id), text: "Land Negotiation ##{@land_negotiation.id}" },
+       "Add PDA Link"]
+    )
+  end
+%>
+
+<% if @pda_link.errors.any? %>
+  <%= error_messages_for(@pda_link) %>
+<% end %>
+
+<%= labelled_tabular_form_for @pda_link,
+                              url: create_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
+                              html: { class: "form" } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">PDA Link Information</legend>
+    
+    <div class="form--field">
+      <%= f.select :pda_id,
+                    options_from_collection_for_select(@available_pdas, :id, :code, @pda_link.pda_id),
+                    { prompt: "Select a PDA", container_class: "-middle", label: "PDA" },
+                    { class: "form--select" } %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_create), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel), project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation), class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+

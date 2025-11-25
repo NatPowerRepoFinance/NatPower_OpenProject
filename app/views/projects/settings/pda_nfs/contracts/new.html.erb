@@ -1,0 +1,173 @@
+<%
+  negotiation_id =
+    @api_negotiation_id.presence ||
+    @land_negotiation.try(:land_negotiation_id).presence ||
+    @land_negotiation.try(:id).presence
+
+  negotiation_label =
+    @land_negotiation.try(:code).presence ||
+    @land_negotiation.try(:name).presence ||
+    negotiation_id ||
+    "API Negotiation"
+
+  persisted_negotiation = @land_negotiation.respond_to?(:persisted?) && @land_negotiation.persisted?
+
+  negotiation_breadcrumb =
+    if persisted_negotiation
+      { href: project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
+        text: "Negotiation ##{negotiation_label}" }
+    else
+      "Negotiation ##{negotiation_label}"
+    end
+
+  negotiation_param_for_form = persisted_negotiation ? @land_negotiation : negotiation_id
+%>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Create Contract" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       negotiation_breadcrumb,
+       "Create Contract"]
+    )
+  end
+%>
+
+<div class="generic-form">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Contract Details</legend>
+
+    <%= form_with url: project_settings_pda_nf_negotiation_contracts_path(@project, @pda_nf, negotiation_param_for_form),
+                  scope: :contract,
+                  html: { class: "form", multipart: true } do |f| %>
+      <div class="form--field -required">
+        <%= f.label :landNegotiationId, "Land Negotiation ID", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.text_field :landNegotiationId,
+                           value: @contract_form["landNegotiationId"],
+                           readonly: true,
+                           class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :pdaId, "PDA ID", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.text_field :pdaId,
+                           value: @contract_form["pdaId"],
+                           readonly: true,
+                           class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :projectId, "Project ID", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.text_field :projectId,
+                           value: @contract_form["projectId"],
+                           class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :contractDescription, "Contract Description", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.text_area :contractDescription,
+                          value: @contract_form["contractDescription"],
+                          rows: 3,
+                          class: "form--text-area" %>
+        </div>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.label :contractTypeId, "Contract Type ID", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.number_field :contractTypeId,
+                             value: @contract_form["contractTypeId"],
+                             class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :status, "Status", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.text_field :status,
+                           value: @contract_form["status"],
+                           class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :startDate, "Start Date", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.datetime_field :startDate,
+                               value: @contract_form["startDate"],
+                               class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :completionDate, "Completion Date", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.datetime_field :completionDate,
+                               value: @contract_form["completionDate"],
+                               class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :initialExpiryDate, "Initial Expiry Date", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.datetime_field :initialExpiryDate,
+                               value: @contract_form["initialExpiryDate"],
+                               class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :initialExpiryNoticePeriodDays, "Notice Period (days)", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.number_field :initialExpiryNoticePeriodDays,
+                             value: @contract_form["initialExpiryNoticePeriodDays"],
+                             class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :extensionPeriod, "Extension Period (months)", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.number_field :extensionPeriod,
+                             value: @contract_form["extensionPeriod"],
+                             class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :longStopDate, "Long Stop Date", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.datetime_field :longStopDate,
+                               value: @contract_form["longStopDate"],
+                               class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.label :contractDocument, "Contract Document (optional)", class: "form--label" %>
+        <div class="form--field-container">
+          <%= f.file_field :contractDocument, class: "form--text-field" %>
+        </div>
+      </div>
+
+      <div class="form--field">
+        <%= f.button "Create Contract",
+                     class: "button -primary -with-icon icon-checkmark" %>
+        <%= link_to t(:button_cancel),
+                    project_settings_pda_nf_negotiation_path(@project, @pda_nf, negotiation_param_for_form),
+                    class: "button" %>
+      </div>
+    <% end %>
+  </fieldset>
+</div>
