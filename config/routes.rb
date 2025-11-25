@@ -302,7 +302,16 @@ Rails.application.routes.draw do
         resource :repository, only: %i[show], controller: "repository"
         resource :versions, only: %i[show]
         resource :storage, only: %i[show], controller: "storage"
-        resources :pda_nfs, only: %i[show new create edit update destroy]
+        resources :pda_nfs, only: %i[show new create edit update destroy] do
+          member do
+            get :new_land_negotiation
+            post :create_land_negotiation
+            get :show_land_negotiation
+            get :edit_land_negotiation
+            patch :update_land_negotiation
+            delete :destroy_land_negotiation
+          end
+        end
         get :types, to: redirect("projects/%{project_id}/settings/work_packages/types")
         get :custom_fields, to: redirect("projects/%{project_id}/settings/work_packages/custom_fields")
         get :categories, to: redirect("projects/%{project_id}/settings/work_packages/categories")

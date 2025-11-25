@@ -33,12 +33,27 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
 
   menu_item :settings_pda_nfs
 
-  skip_before_action :authorize, only: %i[show new create edit update destroy]
+  skip_before_action :authorize,
+                     only: %i[
+                       show
+                       new
+                       create
+                       edit
+                       update
+                       destroy
+                       new_land_negotiation
+                       create_land_negotiation
+                       show_land_negotiation
+                       edit_land_negotiation
+                       update_land_negotiation
+                       destroy_land_negotiation
+                     ]
 
   def show
     if params[:id].present?
       @pda_nf = @project.pda_nfs.find(params[:id])
       @pda_api_data = fetch_pda_api_data(@pda_nf.pda_id) if @pda_nf.pda_id.present?
+      @land_negotiations = @pda_nf.land_negotiation_nfs.order(created_date: :desc)
     else
       @pda_nfs = @project.pda_nfs.order(created_date: :desc)
       @pda_nf = @project.pda_nfs.build(project_id: @project.id)
@@ -89,6 +104,62 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
     end
 
     redirect_to project_settings_general_path(@project)
+  end
+
+  def new_land_negotiation
+    @pda_nf = @project.pda_nfs.find(params[:id])
+    @land_negotiation = @pda_nf.land_negotiation_nfs.build(project_id: @project.id, pda_id: @pda_nf.id)
+  end
+
+  def create_land_negotiation
+    @pda_nf = @project.pda_nfs.find(params[:id])
+    @land_negotiation = @pda_nf.land_negotiation_nfs.build(land_negotiation_params)
+    @land_negotiation.project_id = @project.id
+    @land_negotiation.pda_id = @pda_nf.id
+
+    if @land_negotiation.save
+      flash[:notice] = I18n.t(:notice_successful_create)
+      redirect_to project_settings_pda_nf_path(@project, @pda_nf)
+    else
+      flash.now[:error] = I18n.t(:notice_unsuccessful_create_with_reason, reason: @land_negotiation.errors.full_messages.join(", "))
+      render action: :new_land_negotiation, status: :unprocessable_entity
+    end
+  end
+
+  def show_land_negotiation
+    @pda_nf = @project.pda_nfs.find(params[:id])
+    @land_negotiation = @pda_nf.land_negotiation_nfs.find(params[:land_negotiation_id])
+  end
+
+  def edit_land_negotiation
+    @pda_nf = @project.pda_nfs.find(params[:id])
+    @land_negotiation = @pda_nf.land_negotiation_nfs.find(params[:land_negotiation_id])
+  end
+
+  def update_land_negotiation
+    @pda_nf = @project.pda_nfs.find(params[:id])
+    @land_negotiation = @pda_nf.land_negotiation_nfs.find(params[:land_negotiation_id])
+
+    if @land_negotiation.update(land_negotiation_params)
+      flash[:notice] = I18n.t(:notice_successful_update)
+      redirect_to show_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id)
+    else
+      flash.now[:error] = I18n.t(:notice_unsuccessful_update_with_reason, reason: @land_negotiation.errors.full_messages.join(", "))
+      render action: :edit_land_negotiation, status: :unprocessable_entity
+    end
+  end
+
+  def destroy_land_negotiation
+    @pda_nf = @project.pda_nfs.find(params[:id])
+    @land_negotiation = @pda_nf.land_negotiation_nfs.find(params[:land_negotiation_id])
+
+    if @land_negotiation.destroy
+      flash[:notice] = I18n.t(:notice_successful_delete)
+    else
+      flash[:error] = I18n.t(:notice_unsuccessful_delete)
+    end
+
+    redirect_to project_settings_pda_nf_path(@project, @pda_nf)
   end
 
   private
@@ -149,6 +220,21 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
       :custom_substation,
       :transmisson_substation,
       :mw_hydroelectric
+    )
+  end
+
+  def land_negotiation_params
+    params.require(:land_negotiation_nf).permit(
+      :code,
+      :name,
+      :friendly_name,
+      :contract_status,
+      :negotiation_status,
+      :success_rating,
+      :estimated_completion,
+      :budget_id,
+      :status,
+      :land_negotiation_id
     )
   end
 end

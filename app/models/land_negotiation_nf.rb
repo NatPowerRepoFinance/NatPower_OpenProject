@@ -1,17 +1,14 @@
-class PdaNf < ApplicationRecord
-  self.table_name = "pda_nf"
+class LandNegotiationNf < ApplicationRecord
+  self.table_name = "land_negotiation_nf"
 
   belongs_to :project, optional: true
+  belongs_to :pda_nf, foreign_key: "pda_id", optional: true
   belongs_to :creator, class_name: "User", foreign_key: "created_by", optional: true
   belongs_to :modifier, class_name: "User", foreign_key: "modified_by", optional: true
 
-  validates :pda_id, presence: true
-  validates :initial_code, presence: true, length: { maximum: 255 }
-  validates :code, presence: true, length: { maximum: 255 }
-
-  has_many :land_negotiation_nfs, foreign_key: "pda_id", dependent: :destroy
-
   scope :for_project, ->(project) { where(project_id: project.id) }
+  scope :for_pda, ->(pda_id) { where(pda_id: pda_id) }
+  scope :active, -> { where(status: "active") }
 
   before_save :set_modified_fields
 
@@ -19,8 +16,9 @@ class PdaNf < ApplicationRecord
 
   def set_modified_fields
     self.modified_by = User.current&.id if User.current
-    self.modified_date = Time.current
+    self.last_updated_date = Time.current
     self.created_by = User.current&.id if created_by.nil? && User.current
     self.created_date = Time.current if created_date.nil?
   end
 end
+

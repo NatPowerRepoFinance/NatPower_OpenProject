@@ -1,0 +1,120 @@
+<%#-- copyright
+OpenProject is an open source project management software.
+Copyright (C) the OpenProject GmbH
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License version 3.
+
+OpenProject is a fork of ChiliProject, which is a fork of Redmine. The copyright follows:
+Copyright (C) 2006-2013 Jean-Philippe Lang
+Copyright (C) 2010-2013 the ChiliProject Team
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+See COPYRIGHT and LICENSE files for more details.
+
+++#%>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Add Land Negotiation" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       "Add Land Negotiation"]
+    )
+  end
+%>
+
+<% if @land_negotiation.errors.any? %>
+  <%= error_messages_for(@land_negotiation) %>
+<% end %>
+
+<%= labelled_tabular_form_for @land_negotiation,
+                              url: create_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf),
+                              html: { class: "form" } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Negotiation Information</legend>
+    
+    <div class="form--field">
+      <%= f.text_field :land_negotiation_id,
+                        container_class: "-middle",
+                        label: "Land Negotiation ID",
+                        type: "number" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :code,
+                        container_class: "-middle",
+                        label: "Code" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :name,
+                        container_class: "-middle",
+                        label: "Name" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :friendly_name,
+                        container_class: "-middle",
+                        label: "Friendly Name" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :contract_status,
+                         container_class: "-middle",
+                         label: "Contract Status" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :negotiation_status,
+                         container_class: "-middle",
+                         label: "Negotiation Status" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :success_rating,
+                        container_class: "-middle",
+                        label: "Success Rating" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.date_field :estimated_completion,
+                        container_class: "-middle",
+                        label: "Estimated Completion" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :budget_id,
+                        container_class: "-middle",
+                        label: "Budget ID",
+                        type: "number" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.select :status,
+                    options_for_select([["Active", "active"], ["Inactive", "inactive"]], @land_negotiation.status || "active"),
+                    { container_class: "-middle", label: "Status" } %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_create), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel), project_settings_pda_nf_path(@project, @pda_nf), class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+
