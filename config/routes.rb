@@ -303,13 +303,42 @@ Rails.application.routes.draw do
         resource :versions, only: %i[show]
         resource :storage, only: %i[show], controller: "storage"
         resources :pda_nfs, only: %i[show new create edit update destroy] do
+          resources :negotiations, only: %i[show new create edit update destroy], controller: "pda_nfs" do
+            resources :contracts, only: %i[new create], controller: "pda_nfs/contracts"
+
+            member do
+              get :new_land_contract
+              post :create_land_contract
+              get :show_land_contract
+              get :edit_land_contract
+              patch :update_land_contract
+              delete :destroy_land_contract
+              
+              get :new_pda_link
+              post :create_pda_link
+              get :show_pda_link
+              get :edit_pda_link
+              patch :update_pda_link
+              delete :destroy_pda_link
+
+            end
+          end
+          
           member do
-            get :new_land_negotiation
-            post :create_land_negotiation
-            get :show_land_negotiation
-            get :edit_land_negotiation
-            patch :update_land_negotiation
-            delete :destroy_land_negotiation
+            get :negotiation_contracts
+            get :new_land_parcel
+            post :create_land_parcel
+            get :show_land_parcel
+            get :edit_land_parcel
+            patch :update_land_parcel
+            delete :destroy_land_parcel
+            
+            get :new_land_title
+            post :create_land_title
+            get :show_land_title
+            get :edit_land_title
+            patch :update_land_title
+            delete :destroy_land_title
           end
         end
         get :types, to: redirect("projects/%{project_id}/settings/work_packages/types")
