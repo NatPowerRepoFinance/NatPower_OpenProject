@@ -1,0 +1,64 @@
+<% html_title t(:label_administration), t(:label_contact_plural) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_contact_plural) }
+    header.with_breadcrumbs(
+      [{ href: admin_index_path, text: t(:label_administration) },
+       t(:label_contact_plural)]
+    )
+  end
+%>
+
+<%=
+  render(Primer::OpenProject::SubHeader.new) do |subheader|
+    subheader.with_action_button(
+      scheme: :primary,
+      leading_icon: :plus,
+      label: t(:label_contact_new),
+      tag: :a,
+      href: new_contact_path
+    ) do
+      t(:label_contact_new)
+    end
+  end
+%>
+
+<% if @contacts.any? %>
+  <div class="generic-table--container">
+    <div class="generic-table--results-container">
+      <table class="generic-table">
+        <thead>
+          <tr>
+            <th><%= Contact.human_attribute_name(:full_name) %></th>
+            <th><%= Contact.human_attribute_name(:email_work) %></th>
+            <th><%= Contact.human_attribute_name(:phone) %></th>
+            <th><%= Contact.human_attribute_name(:job_title) %></th>
+            <th><%= t(:label_actions) %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @contacts.each do |contact| %>
+            <tr>
+              <td><%= link_to(contact.display_name.presence || Contact.model_name.human, contact_path(contact)) %></td>
+              <td><%= contact.primary_email %></td>
+              <td><%= safe_join([contact.phone, contact.mobile].map { |value| value.presence }.compact, " / ") %></td>
+              <td><%= contact.job_title %></td>
+              <td class="icon-context-menu">
+                <%= link_to t(:button_edit), edit_contact_path(contact), class: "button -tiny" %>
+                <%= link_to t(:button_delete),
+                            contact_path(contact),
+                            data: { confirm: t(:text_are_you_sure) },
+                            method: :delete,
+                            class: "button -tiny -danger" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <%= no_results_box(display_action: true, action_url: new_contact_path) %>
+<% end %>
+
