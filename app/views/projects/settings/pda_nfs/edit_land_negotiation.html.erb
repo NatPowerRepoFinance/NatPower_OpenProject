@@ -15,8 +15,8 @@
 <% end %>
 
 <%= labelled_tabular_form_for @land_negotiation,
-                              url: update_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
-                              html: { class: "form" } do |f| %>
+                              url: project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
+                              html: { class: "form", method: :patch } do |f| %>
   <fieldset class="form--fieldset">
     <legend class="form--fieldset-legend">Land Negotiation Information</legend>
     
@@ -85,7 +85,7 @@
     <div class="form--field">
       <%= f.button t(:button_save), class: "button -primary -with-icon icon-checkmark" %>
       <%= link_to t(:button_cancel),
-                  show_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
+                  project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
                   class: "button" %>
     </div>
   </fieldset>

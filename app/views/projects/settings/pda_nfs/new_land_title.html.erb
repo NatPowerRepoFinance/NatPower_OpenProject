@@ -1,0 +1,61 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Add Land Title" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       { href: show_land_parcel_project_settings_pda_nf_path(@project.id, @pda_nf.id, land_parcel_id: @land_parcel.id), text: "Land Parcel ##{@land_parcel.id}" },
+       "Add Land Title"]
+    )
+  end
+%>
+
+<% if @land_title.errors.any? %>
+  <%= error_messages_for(@land_title) %>
+<% end %>
+
+<%= labelled_tabular_form_for @land_title,
+                              url: create_land_title_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id),
+                              html: { class: "form" } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Title Information</legend>
+    
+    <div class="form--field">
+      <%= f.text_field :land_title_id,
+                        container_class: "-middle",
+                        label: "Land Title ID",
+                        required: true %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :land_registry_title_id,
+                        container_class: "-middle",
+                        label: "Land Registry Title ID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :land_registry_id,
+                         container_class: "-middle",
+                         label: "Land Registry ID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :land_registry_title_document_link,
+                        container_class: "-middle",
+                        label: "Land Registry Title Document Link" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.date_field :land_registry_title_request_date,
+                        container_class: "-middle",
+                        label: "Land Registry Title Request Date" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_create), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel), show_land_parcel_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id), class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+

@@ -1,0 +1,96 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Add Land Contract" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       { href: project_settings_pda_nf_negotiation_path(@project.id, @pda_nf.id, @land_negotiation.id), text: "Land Negotiation ##{@land_negotiation.id}" },
+       "Add Land Contract"]
+    )
+  end
+%>
+
+<% if @land_contract.errors.any? %>
+  <%= error_messages_for(@land_contract) %>
+<% end %>
+
+<%= labelled_tabular_form_for @land_contract,
+                              url: create_land_contract_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
+                              html: { class: "form" } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Contract Information</legend>
+    
+    <div class="form--field">
+      <%= f.number_field :contract_id,
+                        container_class: "-middle",
+                        label: "Contract ID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :contract_type_id,
+                         container_class: "-middle",
+                         label: "Contract Type ID" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.date_field :start_date,
+                        container_class: "-middle",
+                        label: "Start Date" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.date_field :completion_date,
+                        container_class: "-middle",
+                        label: "Completion Date" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :status,
+                        container_class: "-middle",
+                        label: "Status" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.date_field :initial_expiry_date,
+                        container_class: "-middle",
+                        label: "Initial Expiry Date" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :initial_expiry_notice_period_days,
+                         container_class: "-middle",
+                         label: "Initial Expiry Notice Period Days" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.number_field :extension_period,
+                         container_class: "-middle",
+                         label: "Extension Period" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.date_field :long_stop_date,
+                        container_class: "-middle",
+                        label: "Long Stop Date" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :contract_document_link,
+                        container_class: "-middle",
+                        label: "Contract Document Link" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :contract_description,
+                        container_class: "-middle",
+                        label: "Contract Description" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_create), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel), project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation), class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+

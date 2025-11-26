@@ -1,3 +1,22 @@
+<%# Helper method to parse dates from API %>
+<% def parse_api_date(date_value)
+  return nil unless date_value.present?
+  case date_value
+  when String
+    begin
+      Date.parse(date_value)
+    rescue
+      nil
+    end
+  when Date
+    date_value
+  when Time, DateTime
+    date_value.to_date
+  else
+    nil
+  end
+end %>
+
 <%=
   render Primer::OpenProject::PageHeader.new do |header|
     header.with_title { "Land Negotiation" }
@@ -100,10 +119,10 @@
 
     <div class="form--field">
       <%= link_to t(:button_edit),
-                  edit_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
+                  edit_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
                   class: "button -primary" %>
       <%= link_to t(:button_delete),
-                  destroy_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: @land_negotiation.id),
+                  project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
                   data: {
                     turbo_method: :delete,
                     turbo_confirm: t(:text_are_you_sure)
@@ -111,6 +130,146 @@
                   class: "button -secondary -with-icon icon-delete" %>
       <%= link_to t(:button_back), project_settings_pda_nf_path(@project, @pda_nf), class: "button" %>
     </div>
+  </fieldset>
+</div>
+
+<%# Land Contracts Section %>
+<div class="generic-form" style="margin-top: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">
+      Land Contracts
+      <div class="form--toolbar">
+        <span class="form--toolbar-item">
+          <%= link_to "Add Land Contract",
+                      new_land_contract_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
+                      class: "button -primary" %>
+        </span>
+        <span class="form--toolbar-item">
+          <%= link_to "Create Contract",
+                      new_project_settings_pda_nf_negotiation_contract_path(
+                        @project,
+                        @pda_nf,
+                        @land_negotiation.id || @land_negotiation.land_negotiation_id,
+                        api_negotiation_id: @land_negotiation.land_negotiation_id
+                      ),
+                      class: "button" %>
+        </span>
+      </div>
+    </legend>
+    
+    <%# Display existing land contracts %>
+    <% if @land_contracts.present? && @land_contracts.any? %>
+      <div class="generic-table--container" style="margin-bottom: 2rem;">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Contract ID</th>
+                <th>Contract Type ID</th>
+                <th>Start Date</th>
+                <th>Completion Date</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @land_contracts.each do |lc| %>
+                <tr>
+                  <td>
+                    <%= link_to lc.id,
+                                show_land_contract_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, lc) %>
+                  </td>
+                  <td><%= lc.contract_id if lc.contract_id.present? %></td>
+                  <td><%= lc.contract_type_id if lc.contract_type_id.present? %></td>
+                  <td><%= lc.start_date&.strftime("%B %d, %Y") if lc.start_date.present? %></td>
+                  <td><%= lc.completion_date&.strftime("%B %d, %Y") if lc.completion_date.present? %></td>
+                  <td><%= h(lc.status) if lc.status.present? %></td>
+                  <td class="buttons">
+                    <%= link_to "",
+                                edit_land_contract_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, lc),
+                                class: "icon icon-edit",
+                                title: t(:button_edit) %>
+                      <%= link_to "",
+                                destroy_land_contract_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, lc),
+                                data: {
+                                  turbo_method: :delete,
+                                  turbo_confirm: t(:text_are_you_sure)
+                                },
+                                class: "icon icon-delete",
+                                title: t(:button_delete) %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <p class="form--field-instructions">No land contracts found. Click "Add Land Contract" to create one.</p>
+    <% end %>
+  </fieldset>
+</div>
+
+<%# PDA Links Section %>
+<div class="generic-form" style="margin-top: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">
+      PDA Links
+      <div class="form--toolbar">
+        <span class="form--toolbar-item">
+          <%= link_to "Add PDA Link",
+                      new_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
+                      class: "button -primary" %>
+        </span>
+      </div>
+    </legend>
+    
+    <%# Display existing PDA links %>
+    <% if @pda_links.present? && @pda_links.any? %>
+      <div class="generic-table--container" style="margin-bottom: 2rem;">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>PDA ID</th>
+                <th>PDA Code</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @pda_links.each do |pl| %>
+                <tr>
+                  <td>
+                    <%= link_to pl.id,
+                                show_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, pl) %>
+                  </td>
+                  <td><%= pl.pda_id if pl.pda_id.present? %></td>
+                  <td><%= h(pl.pda_nf.code) if pl.pda_nf.present? %></td>
+                  <td class="buttons">
+                    <%= link_to "",
+                                edit_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, pl),
+                                class: "icon icon-edit",
+                                title: t(:button_edit) %>
+                      <%= link_to "",
+                                destroy_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, pl),
+                                data: {
+                                  turbo_method: :delete,
+                                  turbo_confirm: t(:text_are_you_sure)
+                                },
+                                class: "icon icon-delete",
+                                title: t(:button_delete) %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <p class="form--field-instructions">No PDA links found. Click "Add PDA Link" to create one.</p>
+    <% end %>
   </fieldset>
 </div>
 

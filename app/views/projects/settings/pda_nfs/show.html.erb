@@ -1,33 +1,3 @@
-<%#-- copyright
-OpenProject is an open source project management software.
-Copyright (C) the OpenProject GmbH
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License version 3.
-
-OpenProject is a fork of ChiliProject, which is a fork of Redmine. The copyright follows:
-Copyright (C) 2006-2013 Jean-Philippe Lang
-Copyright (C) 2010-2013 the ChiliProject Team
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-See COPYRIGHT and LICENSE files for more details.
-
-++#%>
-
-<%# Helper method to format API values %>
 <% def format_api_value(key, value)
   case value
   when TrueClass
@@ -91,7 +61,7 @@ end %>
   <div class="generic-form">
     <fieldset class="form--fieldset">
       <legend class="form--fieldset-legend">PDA Details</legend>
-      
+      <div class="pda-details-grid" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
       <div class="form--field">
         <label class="form--label">PDA ID</label>
         <div class="form--field-container">
@@ -144,7 +114,7 @@ end %>
       <div class="form--field">
         <label class="form--label">Technology</label>
         <div class="form--field-container">
-          <textarea readonly class="form--text-area" rows="3"><%= h(@pda_nf.technology) if @pda_nf.technology.present? %></textarea>
+          <input type="text" value="<%= h(@pda_nf.technology) if @pda_nf.technology.present? %>" readonly class="form--text-field" />
         </div>
       </div>
 
@@ -210,30 +180,49 @@ end %>
           <input type="checkbox" <%= 'checked' if @pda_nf.transmisson_substation %> disabled />
         </div>
       </div>
-
-      <div class="form--field">
+      </div>
+      <% if @pda_api_data.present? %>
+        <div class="pda-details-grid" style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
+          <% @pda_api_data.each do |key, value| %>
+            <% next if key == "negotiationRel" %>
+            <% next if value.nil? %>
+            <% next if value.is_a?(Hash) && value.empty? %>
+            <% next if value.is_a?(Array) && value.empty? %>
+            <% formatted = format_api_value(key, value) %>
+            <div class="form--field">
+                <label class="form--label"><%= key.to_s.humanize %></label>
+                <div class="form--field-container">
+                  <% plain_value = strip_tags(formatted.to_s) %>
+                  <input type="text" value="<%= plain_value %>" readonly class="form--text-field" />
+                </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+      <div class="form--field" style="grid-column: 1 / -1; margin-top: 1rem;">
         <%= link_to t(:button_edit), edit_project_settings_pda_nf_path(@project, @pda_nf), class: "button -primary" %>
         <%= link_to t(:button_back), project_settings_pda_nfs_path(@project), class: "button" %>
       </div>
     </fieldset>
   </div>
 
-  <%# Land Negotiations Section %>
+  <%# Land Negotiations Section - Shows from API (Raw API Data) %>
   <div class="generic-form" style="margin-top: 2rem;">
     <fieldset class="form--fieldset">
       <legend class="form--fieldset-legend">
         Land Negotiations
+        <span class="form--toolbar-item" style="color: #656d76; font-size: 0.875rem; margin-left: 1rem;">
+        </span>
         <div class="form--toolbar">
           <span class="form--toolbar-item">
             <%= link_to "Add Land Negotiation",
-                        new_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf),
+                        new_project_settings_pda_nf_negotiation_path(@project, @pda_nf),
                         class: "button -primary" %>
           </span>
         </div>
       </legend>
       
-      <%# Display existing land negotiations %>
-      <% if @land_negotiations.present? && @land_negotiations.any? %>
+      <% if @land_negotiations_api_data.present? && @land_negotiations_api_data.any? %>
         <div class="generic-table--container" style="margin-bottom: 2rem;">
           <div class="generic-table--results-container">
             <table class="generic-table">
@@ -242,33 +231,104 @@ end %>
                   <th>ID</th>
                   <th>Land Negotiation ID</th>
                   <th>Code</th>
+                  <th>Name</th>
                   <th>Friendly Name</th>
+                  <th>Contract Status</th>
+                  <th>Negotiation Status</th>
+                  <th>Success Rating</th>
                   <th>Estimated Completion</th>
                   <th>Status</th>
-                  <th>Created Date</th>
+                  <th>Budget ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @land_negotiations_api_data.each do |neg_data| %>
+                  <tr>
+                    <td><%= neg_data["id"] if neg_data["id"].present? %></td>
+                    <td>
+                      <% negotiation_id = neg_data["landNegotiationId"] || neg_data["id"] %>
+                      <% if negotiation_id.present? %>
+                        <%= link_to negotiation_id,
+                                    negotiation_contracts_project_settings_pda_nf_path(
+                                      @project,
+                                      @pda_nf,
+                                      negotiation_id: negotiation_id,
+                                      negotiation_code: neg_data["code"],
+                                      negotiation_name: neg_data["name"],
+                                      negotiation_friendly_name: neg_data["friendlyName"] || neg_data["friendly_name"]
+                                    ) %>
+                      <% end %>
+                    </td>
+                    <td><%= h(neg_data["code"]) if neg_data["code"].present? %></td>
+                    <td><%= h(neg_data["name"]) if neg_data["name"].present? %></td>
+                    <td><%= h(neg_data["friendlyName"] || neg_data["friendly_name"]) if (neg_data["friendlyName"] || neg_data["friendly_name"]).present? %></td>
+                    <td><%= h(neg_data["contractStatus"] || neg_data["contract_status"]) if (neg_data["contractStatus"] || neg_data["contract_status"]).present? %></td>
+                    <td><%= h(neg_data["negotiationStatus"] || neg_data["negotiation_status"]) if (neg_data["negotiationStatus"] || neg_data["negotiation_status"]).present? %></td>
+                    <td><%= h(neg_data["successRating"] || neg_data["success_rating"]) if (neg_data["successRating"] || neg_data["success_rating"]).present? %></td>
+                    <td>
+                      <% if (neg_data["estimatedCompletion"] || neg_data["estimated_completion"]).present? %>
+                        <% est_date = neg_data["estimatedCompletion"] || neg_data["estimated_completion"] %>
+                        <% parsed_date = begin; Date.parse(est_date.to_s); rescue; nil; end %>
+                        <%= parsed_date ? parsed_date.strftime("%B %d, %Y") : est_date %>
+                      <% end %>
+                    </td>
+                    <td><%= h(neg_data["status"]) if neg_data["status"].present? %></td>
+                    <td><%= neg_data["budgetId"] || neg_data["budget_id"] if (neg_data["budgetId"] || neg_data["budget_id"]).present? %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% else %>
+        <p class="form--field-instructions">No land negotiations returned from the API yet.</p>
+      <% end %>
+    </fieldset>
+  </div>
+
+  <%# Land Parcels Section %>
+  <div class="generic-form" style="margin-top: 2rem;">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend">
+        Land Parcels
+        <div class="form--toolbar">
+          <span class="form--toolbar-item">
+            <%= link_to "Add Land Parcel",
+                        new_land_parcel_project_settings_pda_nf_path(@project, @pda_nf),
+                        class: "button -primary" %>
+          </span>
+        </div>
+      </legend>
+      
+      <%# Display existing land parcels %>
+      <% if @land_parcels.present? && @land_parcels.any? %>
+        <div class="generic-table--container" style="margin-bottom: 2rem;">
+          <div class="generic-table--results-container">
+            <table class="generic-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Land Parcel ID</th>
+                  <th>Land Parcel Code</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                <% @land_negotiations.each do |ln| %>
+                <% @land_parcels.each do |lp| %>
                   <tr>
                     <td>
-                      <%= link_to ln.id,
-                                  show_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: ln.id) %>
+                      <%= link_to lp.id,
+                                  show_land_parcel_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: lp.id) %>
                     </td>
-                    <td><%= ln.land_negotiation_id if ln.land_negotiation_id.present? %></td>
-                    <td><%= h(ln.code) if ln.code.present? %></td>
-                    <td><%= h(ln.friendly_name) if ln.friendly_name.present? %></td>
-                    <td><%= ln.estimated_completion.strftime("%B %d, %Y") if ln.estimated_completion.present? %></td>
-                    <td><%= h(ln.status) if ln.status.present? %></td>
-                    <td><%= format_time(ln.created_date) if ln.created_date %></td>
+                    <td><%= lp.land_parcel_id if lp.land_parcel_id.present? %></td>
+                    <td><%= h(lp.land_parcel_code) if lp.land_parcel_code.present? %></td>
                     <td class="buttons">
                       <%= link_to "",
-                                  edit_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: ln.id),
+                                  edit_land_parcel_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: lp.id),
                                   class: "icon icon-edit",
                                   title: t(:button_edit) %>
                       <%= link_to "",
-                                  destroy_land_negotiation_project_settings_pda_nf_path(@project, @pda_nf, land_negotiation_id: ln.id),
+                                  destroy_land_parcel_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: lp.id),
                                   data: {
                                     turbo_method: :delete,
                                     turbo_confirm: t(:text_are_you_sure)
@@ -286,128 +346,10 @@ end %>
     </fieldset>
   </div>
 
-  <%# Display API Data %>
-  <% if @pda_api_data.present? %>
+  
+  <% if @pda_api_data.blank? && params[:id].present? && @pda_nf.pda_id.present? %>
     <div class="generic-form" style="margin-top: 2rem;">
       <fieldset class="form--fieldset">
-        <legend class="form--fieldset-legend">PDA API Data</legend>
-        
-        <%# Display main PDA fields in a table %>
-        <div class="generic-table--container" style="margin-bottom: 2rem;">
-          <div class="generic-table--results-container">
-            <table class="generic-table">
-              <thead>
-                <tr>
-                  <th style="width: 30%;">Field</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% @pda_api_data.each do |key, value| %>
-                  <% next if key == "negotiationRel" || value.nil? %>
-                  <% next if value.is_a?(Hash) && value.empty? %>
-                  <% next if value.is_a?(Array) && value.empty? %>
-                  
-                  <% display_value = format_api_value(key, value) %>
-                  
-                  <tr>
-                    <td class="field-name" style="background-color: #f6f8fa; font-weight: 600; color: #24292f;"><%= key.to_s.humanize %></td>
-                    <td style="word-break: break-word;"><%= display_value.html_safe %></td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <%# Display Negotiation Relations in hierarchical tables %>
-        <% if @pda_api_data["negotiationRel"].present? && @pda_api_data["negotiationRel"].is_a?(Array) %>
-          <div style="margin-top: 2rem;">
-            <h3 class="form--fieldset-legend" style="margin-bottom: 1rem;">Land Negotiations</h3>
-            <% @pda_api_data["negotiationRel"].each_with_index do |negotiation, neg_index| %>
-              <% negotiation_name = negotiation["name"] || negotiation["code"] || "Negotiation #{neg_index + 1}" %>
-              <%= render(Primer::OpenProject::CollapsibleSection.new(collapsed: true, display: :block, mb: 3)) do |section| %>
-                <% section.with_title do %>
-                  <%= negotiation_name %>
-                  <% if negotiation["code"].present? && negotiation["code"] != negotiation_name %>
-                    <span style="color: #656d76; font-weight: normal; margin-left: 0.5rem;">(<%= negotiation["code"] %>)</span>
-                  <% end %>
-                <% end %>
-                <% section.with_collapsible_content do %>
-                  <%# Negotiation details table %>
-                  <div class="generic-table--container" style="margin-bottom: 1rem;">
-                    <div class="generic-table--results-container">
-                      <table class="generic-table">
-                        <thead>
-                          <tr>
-                            <th style="width: 30%; background-color: #f6f8fa;">Field</th>
-                            <th style="background-color: #f6f8fa;">Value</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <% negotiation.each do |key, value| %>
-                            <% next if key == "titleNo" || value.nil? %>
-                            <% next if value.is_a?(Hash) && value.empty? %>
-                            <% next if value.is_a?(Array) && value.empty? %>
-                            
-                            <% display_value = format_api_value(key, value) %>
-                            
-                            <tr>
-                              <td class="field-name" style="background-color: #f6f8fa; font-weight: 600; color: #24292f;"><%= key.to_s.humanize %></td>
-                              <td style="word-break: break-word;"><%= display_value.html_safe %></td>
-                            </tr>
-                          <% end %>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <%# Display Title Numbers in nested collapsible table %>
-                  <% if negotiation["titleNo"].present? && negotiation["titleNo"].is_a?(Array) %>
-                    <%= render(Primer::OpenProject::CollapsibleSection.new(collapsed: true, display: :block, mb: 2)) do |title_section| %>
-                      <% title_section.with_title do %>
-                        Title Numbers (<%= negotiation["titleNo"].count %>)
-                      <% end %>
-                      <% title_section.with_collapsible_content do %>
-                        <div class="generic-table--container">
-                          <div class="generic-table--results-container">
-                            <table class="generic-table">
-                              <thead>
-                                <tr>
-                                  <% if negotiation["titleNo"].any? %>
-                                    <% negotiation["titleNo"].first.keys.each do |key| %>
-                                      <th style="background-color: #f6f8fa;"><%= key.to_s.humanize %></th>
-                                    <% end %>
-                                  <% end %>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <% negotiation["titleNo"].each do |title_no| %>
-                                  <tr>
-                                    <% title_no.each do |key, value| %>
-                                      <% display_value = format_api_value(key, value) %>
-                                      <td style="word-break: break-word;"><%= display_value.html_safe %></td>
-                                    <% end %>
-                                  </tr>
-                                <% end %>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      <% end %>
-                    <% end %>
-                  <% end %>
-                <% end %>
-              <% end %>
-            <% end %>
-          </div>
-        <% end %>
-      </fieldset>
-    </div>
-  <% elsif params[:id].present? && @pda_nf.pda_id.present? %>
-    <div class="generic-form" style="margin-top: 2rem;">
-      <fieldset class="form--fieldset">
-        <legend class="form--fieldset-legend">PDA API Data</legend>
         <p class="form--field">
           <%= t(:notice_no_data_available) || "No API data available for this PDA." %>
         </p>

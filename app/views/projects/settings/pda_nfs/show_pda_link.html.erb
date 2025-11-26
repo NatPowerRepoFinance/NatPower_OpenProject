@@ -1,0 +1,63 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "PDA Link" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       { href: project_settings_pda_nf_negotiation_path(@project.id, @pda_nf.id, @land_negotiation.id), text: "Land Negotiation ##{@land_negotiation.id}" },
+       "PDA Link ##{@pda_link.id}"]
+    )
+  end
+%>
+
+<div class="generic-form">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">PDA Link Details</legend>
+
+    <div class="form--field">
+      <label class="form--label">ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @pda_link.id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Land Negotiation ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @pda_link.land_negotiation_id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">PDA ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @pda_link.pda_id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <% if @pda_link.pda_nf.present? %>
+      <div class="form--field">
+        <label class="form--label">PDA Code</label>
+        <div class="form--field-container">
+          <input type="text" value="<%= h(@pda_link.pda_nf.code) %>" readonly class="form--text-field" />
+        </div>
+      </div>
+    <% end %>
+
+    <div class="form--field">
+      <%= link_to t(:button_edit),
+                  edit_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, @pda_link),
+                  class: "button -primary" %>
+      <%= link_to t(:button_delete),
+                  destroy_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, @pda_link),
+                  data: {
+                    turbo_method: :delete,
+                    turbo_confirm: t(:text_are_you_sure)
+                  },
+                  class: "button -secondary -with-icon icon-delete" %>
+      <%= link_to t(:button_back), project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation), class: "button" %>
+    </div>
+  </fieldset>
+</div>
+

@@ -1,0 +1,204 @@
+<%# Helper for formatting date-like values %>
+<% def format_contract_date(value)
+  return nil unless value.present?
+  begin
+    Date.parse(value.to_s).strftime("%B %d, %Y")
+  rescue
+    value
+  end
+end %>
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Negotiation" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       "Contracts"]
+    )
+  end
+%>
+
+<div class="generic-form">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">
+      Negotiation Summary
+    </legend>
+
+    <div class="form--field">
+      <label class="form--label">Negotiation ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @negotiation_metadata[:negotiation_id] %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <% if @negotiation_metadata[:code].present? %>
+      <div class="form--field">
+        <label class="form--label">Code</label>
+        <div class="form--field-container">
+          <input type="text" value="<%= h(@negotiation_metadata[:code]) %>" readonly class="form--text-field" />
+        </div>
+      </div>
+    <% end %>
+
+    <% if @negotiation_metadata[:name].present? %>
+      <div class="form--field">
+        <label class="form--label">Name</label>
+        <div class="form--field-container">
+          <input type="text" value="<%= h(@negotiation_metadata[:name]) %>" readonly class="form--text-field" />
+        </div>
+      </div>
+    <% end %>
+
+    <% if @negotiation_metadata[:friendly_name].present? %>
+      <div class="form--field">
+        <label class="form--label">Friendly Name</label>
+        <div class="form--field-container">
+          <input type="text" value="<%= h(@negotiation_metadata[:friendly_name]) %>" readonly class="form--text-field" />
+        </div>
+      </div>
+    <% end %>
+
+    <div class="form--field">
+      <%= link_to "Back to PDA",
+                  project_settings_pda_nf_path(@project, @pda_nf),
+                  class: "button" %>
+    </div>
+  </fieldset>
+</div>
+
+<div class="generic-form" style="margin-top: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">
+      Contracts
+      <div class="form--toolbar" style="margin-left: auto;">
+        <span class="form--toolbar-item">
+          <% negotiation_resource = @negotiation_record_for_api_contract.presence %>
+          <% negotiation_param =
+               if negotiation_resource.respond_to?(:id) && negotiation_resource.id.present?
+                 negotiation_resource.id
+               else
+                 @negotiation_metadata[:negotiation_id]
+               end %>
+          <%= link_to "Create Contract",
+                      new_project_settings_pda_nf_negotiation_contract_path(
+                        @project,
+                        @pda_nf,
+                        negotiation_param,
+                        api_negotiation_id: @negotiation_metadata[:negotiation_id],
+                        negotiation_code: @negotiation_metadata[:code],
+                        negotiation_name: @negotiation_metadata[:name],
+                        negotiation_friendly_name: @negotiation_metadata[:friendly_name]
+                      ),
+                      class: "button -primary" %>
+        </span>
+      </div>
+    </legend>
+
+    <% if @negotiation_contracts_api_data.present? && @negotiation_contracts_api_data.any? %>
+      <div class="generic-table--container" style="margin-bottom: 2rem;">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <thead>
+              <tr>
+                <th>Contract ID</th>
+                <th>Contract Type ID</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>Completion Date</th>
+                <th>Initial Expiry Date</th>
+                <th>Notice Period (Days)</th>
+                <th>Extension Period</th>
+                <th>Long Stop Date</th>
+                <th>Document Link</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @negotiation_contracts_api_data.each do |contract| %>
+                <tr>
+                  <td><%= contract["contractId"] || contract["id"] %></td>
+                  <td><%= contract["contractTypeId"] || contract["contract_type_id"] %></td>
+                  <td><%= h(contract["status"]) if contract["status"].present? %></td>
+                  <td><%= format_contract_date(contract["startDate"] || contract["start_date"]) %></td>
+                  <td><%= format_contract_date(contract["completionDate"] || contract["completion_date"]) %></td>
+                  <td><%= format_contract_date(contract["initialExpiryDate"] || contract["initial_expiry_date"]) %></td>
+                  <td><%= contract["initialExpiryNoticePeriodDays"] || contract["initial_expiry_notice_period_days"] %></td>
+                  <td><%= contract["extensionPeriod"] || contract["extension_period"] %></td>
+                  <td><%= format_contract_date(contract["longStopDate"] || contract["long_stop_date"]) %></td>
+                  <td>
+                    <% if contract["contractDocumentLink"].present? %>
+                      <%= link_to "Open", contract["contractDocumentLink"], target: "_blank", rel: "noopener" %>
+                    <% elsif contract["contract_document_link"].present? %>
+                      <%= link_to "Open", contract["contract_document_link"], target: "_blank", rel: "noopener" %>
+                    <% end %>
+                  </td>
+                  <td><%= h(contract["contractDescription"] || contract["contract_description"]) if (contract["contractDescription"] || contract["contract_description"]).present? %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <p class="form--field-instructions">
+        No contracts were returned by the API for this negotiation.
+      </p>
+    <% end %>
+  </fieldset>
+</div>
+
+<%# Land Titles from API Section %>
+<div class="generic-form" style="margin-top: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">
+      Land Titles 
+    </legend>
+    
+    <% if @land_titles_api_data.present? && @land_titles_api_data.any? %>
+      <div class="generic-table--container" style="margin-bottom: 2rem;">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Land Negotiation ID</th>
+                <th>Land Title ID</th>
+                <th>Negotiation Status</th>
+                <th>Number of Parcels</th>
+                <th>Total Acre</th>
+                <th>Used Acre</th>
+                <th>Is Deleted</th>
+                <th>Success Rating</th>
+                <th>Estimated Completion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @land_titles_api_data.each do |title_data| %>
+                <tr>
+                  <td><%= title_data["id"] if title_data["id"].present? %></td>
+                  <td><%= title_data["landNegotiationId"] if title_data["landNegotiationId"].present? %></td>
+                  <td><%= h(title_data["landTitleId"]) if title_data["landTitleId"].present? %></td>
+                  <td><%= h(title_data["negotiationStatus"]) if title_data["negotiationStatus"].present? %></td>
+                  <td><%= title_data["numOfParcels"] if title_data["numOfParcels"].present? %></td>
+                  <td><%= number_with_precision(title_data["totalAcre"], precision: 2) if title_data["totalAcre"].present? %></td>
+                  <td><%= number_with_precision(title_data["usedAcre"], precision: 2) if title_data["usedAcre"].present? %></td>
+                  <td><%= title_data["isDeleted"] ? "Yes" : "No" if !title_data["isDeleted"].nil? %></td>
+                  <td><%= h(title_data["successRating"]) if title_data["successRating"].present? %></td>
+                  <td>
+                    <% if title_data["estimatedCompletion"].present? %>
+                      <%= format_contract_date(title_data["estimatedCompletion"]) %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <p class="form--field-instructions">No land titles returned from the API for this negotiation.</p>
+    <% end %>
+  </fieldset>
+</div>

@@ -1,0 +1,120 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Land Parcel" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       "Land Parcel ##{@land_parcel.id}"]
+    )
+  end
+%>
+
+<div class="generic-form">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Parcel Details</legend>
+
+    <div class="form--field">
+      <label class="form--label">ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_parcel.id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Land Parcel ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @land_parcel.land_parcel_id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">Land Parcel Code</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= h(@land_parcel.land_parcel_code) if @land_parcel.land_parcel_code.present? %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <%= link_to t(:button_edit),
+                  edit_land_parcel_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id),
+                  class: "button -primary" %>
+      <%= link_to t(:button_delete),
+                  destroy_land_parcel_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id),
+                  data: {
+                    turbo_method: :delete,
+                    turbo_confirm: t(:text_are_you_sure)
+                  },
+                  class: "button -secondary -with-icon icon-delete" %>
+      <%= link_to t(:button_back), project_settings_pda_nf_path(@project, @pda_nf), class: "button" %>
+    </div>
+  </fieldset>
+</div>
+
+<%# Land Titles Section %>
+<div class="generic-form" style="margin-top: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">
+      Land Titles
+      <div class="form--toolbar">
+        <span class="form--toolbar-item">
+          <%= link_to "Add Land Title",
+                      new_land_title_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id),
+                      class: "button -primary" %>
+        </span>
+      </div>
+    </legend>
+    
+    <%# Display existing land titles %>
+    <% if @land_titles.present? && @land_titles.any? %>
+      <div class="generic-table--container" style="margin-bottom: 2rem;">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Land Title ID</th>
+                <th>Land Registry Title ID</th>
+                <th>Land Registry ID</th>
+                <th>Document Link</th>
+                <th>Request Date</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @land_titles.each do |lt| %>
+                <tr>
+                  <td>
+                    <%= link_to lt.id,
+                                show_land_title_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id, land_title_id: lt.land_title_id) %>
+                  </td>
+                  <td><%= h(lt.land_title_id) if lt.land_title_id.present? %></td>
+                  <td><%= h(lt.land_registry_title_id) if lt.land_registry_title_id.present? %></td>
+                  <td><%= lt.land_registry_id if lt.land_registry_id.present? %></td>
+                  <td><%= h(lt.land_registry_title_document_link) if lt.land_registry_title_document_link.present? %></td>
+                  <td><%= lt.land_registry_title_request_date&.strftime("%B %d, %Y") if lt.land_registry_title_request_date.present? %></td>
+                  <td class="buttons">
+                    <%= link_to "",
+                                edit_land_title_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id, land_title_id: lt.land_title_id),
+                                class: "icon icon-edit",
+                                title: t(:button_edit) %>
+                    <%= link_to "",
+                                destroy_land_title_project_settings_pda_nf_path(@project, @pda_nf, land_parcel_id: @land_parcel.id, land_title_id: lt.land_title_id),
+                                data: {
+                                  turbo_method: :delete,
+                                  turbo_confirm: t(:text_are_you_sure)
+                                },
+                                class: "icon icon-delete",
+                                title: t(:button_delete) %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <p class="form--field-instructions">No land titles found. Click "Add Land Title" to create one.</p>
+    <% end %>
+  </fieldset>
+</div>

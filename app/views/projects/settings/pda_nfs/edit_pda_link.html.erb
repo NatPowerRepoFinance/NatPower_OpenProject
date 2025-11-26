@@ -1,0 +1,46 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Edit PDA Link" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       { href: project_settings_pda_nf_negotiation_path(@project.id, @pda_nf.id, @land_negotiation.id), text: "Land Negotiation ##{@land_negotiation.id}" },
+       "Edit PDA Link ##{@pda_link.id}"]
+    )
+  end
+%>
+
+<% if @pda_link.errors.any? %>
+  <%= error_messages_for(@pda_link) %>
+<% end %>
+
+<%= labelled_tabular_form_for @pda_link,
+                              url: update_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, @pda_link),
+                              html: { class: "form", method: :patch } do |f| %>
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">PDA Link Information</legend>
+    
+    <div class="form--field">
+      <label class="form--label">ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @pda_link.id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <%= f.select :pda_id,
+                    options_from_collection_for_select(@available_pdas, :id, :code, @pda_link.pda_id),
+                    { container_class: "-middle", label: "PDA" },
+                    { class: "form--select" } %>
+    </div>
+
+    <div class="form--field">
+      <%= f.button t(:button_save), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel),
+                  show_pda_link_project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation, @pda_link),
+                  class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+
