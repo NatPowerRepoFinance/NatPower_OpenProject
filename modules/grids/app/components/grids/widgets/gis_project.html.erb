@@ -14,13 +14,11 @@
             concat(
               render(Primer::Alpha::FormControl.new(label: field_label)) do |control|
                 control.with_input do
-                  content_tag(:input, nil, {
-                    type: "text",
-                    value: format_value_for_display(field_value),
-                    readonly: true,
-                    class: "FormControl-input input--readonly",
-                    id: "gis_#{field_label.parameterize.underscore}"
-                  })
+                  content_tag(
+                    :span,
+                    format_value_for_display(field_value),
+                    class: "gis-project-field-value"
+                  )
                 end
               end
             )

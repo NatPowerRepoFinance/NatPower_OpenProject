@@ -1,5 +1,16 @@
 <%=
   widget_wrapper do |container|
+
+    concat(
+      render(Primer::Beta::Button.new(
+        scheme: :primary,
+        leading_icon: :plus,
+        tag: :a,
+        href: new_project_settings_pda_nf_path(project),
+        classes: "mb-3 col-2"
+      )) { "Add PDA" }
+    )
+
     if pda_nfs.any?
       container.with_row do
         content_tag(:div, class: "generic-table--container") do
