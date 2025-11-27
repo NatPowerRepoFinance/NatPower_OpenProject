@@ -175,7 +175,7 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
     
     if @pda_nf.save
       flash[:notice] = I18n.t(:notice_successful_create)
-      redirect_to project_settings_general_path(@project)
+      redirect_to project_overview_path(@project)
     else
       flash.now[:error] = I18n.t(:notice_unsuccessful_create_with_reason, reason: @pda_nf.errors.full_messages.join(", "))
       render action: :new, status: :unprocessable_entity
@@ -214,7 +214,7 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
 
     if @pda_nf.update(pda_nf_params)
       flash[:notice] = I18n.t(:notice_successful_update)
-      redirect_to project_settings_general_path(@project)
+      redirect_to project_overview_path(@project)
     else
       flash.now[:error] = I18n.t(:notice_unsuccessful_update_with_reason, reason: @pda_nf.errors.full_messages.join(", "))
       render action: :edit, status: :unprocessable_entity
