@@ -1,0 +1,51 @@
+<% contact_name = @contact.display_name.presence || Contact.model_name.human %>
+
+<% html_title t(:label_administration), contact_name %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { contact_name }
+    header.with_breadcrumbs(
+      [{ href: admin_index_path, text: t(:label_administration) },
+       { href: contacts_path, text: t(:label_contact_plural) },
+       contact_name]
+    )
+  end
+%>
+
+<fieldset class="form--fieldset">
+  <legend class="form--fieldset-legend"><%= t(:label_contact_details) %></legend>
+
+  <% [
+      :honorifics_id,
+      :first_name,
+      :last_name,
+      :full_name,
+      :email_work,
+      :email_private,
+      :phone,
+      :mobile,
+      :phone_alternative,
+      :job_title,
+      :date_of_birth
+    ].each do |attribute| %>
+    <div class="form--field">
+      <label class="form--label"><%= Contact.human_attribute_name(attribute) %></label>
+      <input type="text"
+             readonly
+             class="form--text-field"
+             value="<%= h(@contact.public_send(attribute)) %>">
+    </div>
+  <% end %>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:is_deleted) %></label>
+    <input type="checkbox" disabled <%= @contact.is_deleted? ? "checked" : "" %> />
+  </div>
+</fieldset>
+
+<div class="form--actions">
+  <%= link_to t(:button_edit), edit_contact_path(@contact), class: "button -primary" %>
+  <%= link_to t(:button_back), contacts_path, class: "button" %>
+</div>
+

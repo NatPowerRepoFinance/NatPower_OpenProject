@@ -193,6 +193,14 @@ Redmine::MenuManager.map :global_menu do |menu|
             parent: :projects,
             partial: "projects/menus/menu"
 
+
+  menu.push :contacts,
+            { controller: "/contacts", action: "index" },
+            if: ->(_) { User.current.admin? },
+            caption: :label_contact_plural,
+            parent: :users_and_permissions,
+            icon: "person"
+
   # Activity
   menu.push :activity,
             { controller: "/activities", action: "index" },

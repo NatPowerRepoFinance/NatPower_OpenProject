@@ -1138,6 +1138,21 @@ en:
         customized_type: "Customized type"
       capability:
         context: "Context"
+      contact:
+        contact_id: "Contact ID"
+        honorifics_id: "Honorifics"
+        honorifics: "Honorifics"
+        first_name: "First name"
+        last_name: "Last name"
+        full_name: "Full name"
+        email_work: "Work email"
+        email_private: "Private email"
+        phone: "Phone"
+        mobile: "Mobile"
+        phone_alternative: "Alternative phone"
+        job_title: "Job title"
+        date_of_birth: "Date of birth"
+        is_deleted: "Archived"
       changeset:
         repository: "Repository"
       comment:
@@ -1851,6 +1866,7 @@ en:
       auth_provider:
         one: "Authentication provider"
         other: "Authentication providers"
+      contact: "Contact"
       category: "Category"
       color: "Color"
       comment: "Comment"
@@ -3080,6 +3096,10 @@ en:
   label_contains: "contains"
   label_content: "Content"
   label_color_plural: "Colors"
+  label_contact_plural: "Contacts"
+  label_contact_new: "New contact"
+  label_contact_edit: "Edit contact"
+  label_contact_details: "Contact details"
   label_copied: "copied"
   label_copy_same_as_target: "Same as target"
   label_copy_source: "Source"

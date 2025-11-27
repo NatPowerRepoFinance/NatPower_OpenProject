@@ -1,0 +1,59 @@
+<%= error_messages_for "contact" %>
+
+<fieldset class="form--fieldset">
+  <div class="form--field">
+    <%= f.number_field :honorifics_id, label: Contact.human_attribute_name(:honorifics_id), container_class: "-slim" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.text_field :first_name, required: true, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field -required">
+    <%= f.text_field :last_name, required: true, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.text_field :full_name, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.text_field :email_work, container_class: "-slim", type: "email" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.text_field :email_private, container_class: "-slim", type: "email" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.telephone_field :phone, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.telephone_field :mobile, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.telephone_field :phone_alternative, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.text_field :job_title, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field">
+    <%= f.date_field :date_of_birth, container_class: "-slim" %>
+  </div>
+
+  <div class="form--field -slim">
+    <%= f.check_box :is_deleted,
+                    label: Contact.human_attribute_name(:is_deleted),
+                    container_class: "-middle" %>
+  </div>
+</fieldset>
+
+<div class="form--actions">
+  <%= styled_button_tag t(:button_save), class: "-primary -with-icon icon-checkmark" %>
+  <%= link_to t(:button_cancel), contacts_path, class: "button -with-icon icon-cancel" %>
+</div>
+

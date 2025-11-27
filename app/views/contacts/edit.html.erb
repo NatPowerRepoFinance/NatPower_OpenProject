@@ -1,0 +1,20 @@
+<% html_title t(:label_administration), t(:label_contact_edit) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_contact_edit) }
+    header.with_breadcrumbs(
+      [{ href: admin_index_path, text: t(:label_administration) },
+       { href: contacts_path, text: t(:label_contact_plural) },
+       { href: contact_path(@contact), text: @contact.display_name.presence || Contact.model_name.human },
+       t(:label_contact_edit)]
+    )
+  end
+%>
+
+<%= labelled_tabular_form_for @contact,
+                              url: contact_path(@contact),
+                              html: { method: :patch } do |f| %>
+  <%= render partial: "form", locals: { f: f, contact: @contact } %>
+<% end %>
+

@@ -989,6 +989,8 @@ Rails.application.routes.draw do
     get "onboarding_video_dialog", action: "onboarding_video_dialog"
   end
 
+  resources :contacts
+
   resources :colors do
     member do
       get :confirm_destroy
