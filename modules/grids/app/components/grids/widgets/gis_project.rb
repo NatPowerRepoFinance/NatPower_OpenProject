@@ -68,38 +68,11 @@ module Grids
       private
 
       def fetch_gis_data
-        Rails.logger.info("GIS Project widget: Checking project external_project_id - #{project&.external_project_id.inspect}")
-        return nil unless project&.external_project_id.present?
-        
         Rails.logger.info("GIS Project widget: Checking API key - #{api_key.present?}")
         return nil unless api_key.present?
 
-        begin
-          url = "https://natpower-gis-project-dev.azurewebsites.net/erp/project/#{project.external_project_id}"
-          Rails.logger.info("GIS Project widget: Fetching data from #{url}")
-          
-          response = OpenProject.httpx.with(
-            headers: {
-              "X-Access-Token" => api_key,
-              "Content-Type" => "application/json"
-            }
-          ).get(url)
-
-          Rails.logger.info("GIS Project widget: API response status - #{response.status}")
-          
-          if response.status == 200
-            data = response.json(symbolize_keys: false)
-            Rails.logger.info("GIS Project widget: Data fetched successfully, present?=#{data.present?}, keys=#{data.keys.inspect if data.is_a?(Hash)}")
-            data
-          else
-            Rails.logger.warn("GIS Project widget: API returned non-200 status: #{response.status}")
-            nil
-          end
-        rescue StandardError => e
-          Rails.logger.error("Failed to fetch GIS project data: #{e.message}")
-          Rails.logger.error("Failed to fetch GIS project data - backtrace: #{e.backtrace.first(5).join("\n")}")
-          nil
-        end
+        # GIS widget functionality disabled - external_project_id removed
+        nil
       end
 
       def api_key

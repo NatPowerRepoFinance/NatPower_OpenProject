@@ -36,7 +36,7 @@ module Overviews
       include OpPrimer::ComponentHelpers
       include OpTurbo::Streamable
 
-      ATTRIBUTES_TO_DISPLAY = %i[created_date last_updated deleted_date last_updated_date centroid external_project_id].freeze
+      ATTRIBUTES_TO_DISPLAY = %i[created_date last_updated deleted_date last_updated_date].freeze
 
       def initialize(project:)
         super

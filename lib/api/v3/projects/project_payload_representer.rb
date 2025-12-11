@@ -37,7 +37,7 @@ module API
         def writable_attributes
           # Use camelCase to match the 'as:' values in ProjectRepresenter
           super + %w[
-            statusText createdDate lastUpdated deletedDate lastUpdatedDate centroid externalProjectId
+            statusText createdDate lastUpdated deletedDate lastUpdatedDate
           ]
         end
       end

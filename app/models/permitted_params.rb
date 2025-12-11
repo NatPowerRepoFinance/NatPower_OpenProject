@@ -293,8 +293,6 @@ class PermittedParams
                                                 :status_code,
                                                 :status_explanation,
                                                 :status,
-                                                :centroid,
-                                                :external_project_id,
                                                 work_package_custom_field_ids: [],
                                                 type_ids: [],
                                                 enabled_module_names: [],
@@ -332,8 +330,6 @@ class PermittedParams
         :parent_id,
         :workspace_type,
         :status,
-        :centroid,
-        :external_project_id,
         { pda_nfs_attributes: [
           :pda_id,
           :initial_code,

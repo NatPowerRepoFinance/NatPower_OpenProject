@@ -26,10 +26,8 @@
           nil
         end
       else
-        render(Primer::Beta::Text.new(color: :subtle)) { t(".no_data") }
-      end
-    elsif project&.external_project_id.blank?
-      render(Primer::Beta::Text.new(color: :subtle)) { t(".no_external_project_id") }
+          render(Primer::Beta::Text.new(color: :subtle)) { t(".no_data") }
+        end
     elsif ENV["GIS_API_KEY"].blank?
       render(Primer::Beta::Text.new(color: :subtle)) { t(".no_api_key") }
     else

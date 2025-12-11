@@ -35,8 +35,6 @@ export interface IProject {
   lastUpdated?:string;
   deletedDate?:string;
   lastUpdatedDate?:string;
-  centroid?:string;
-  externalProjectId?:string;
 
   _links:IProjectHalResourceLinks;
 }

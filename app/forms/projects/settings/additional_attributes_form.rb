@@ -17,17 +17,6 @@ module Projects
           end
         end
 
-        f.text_field(
-          name: :centroid,
-          label: attribute_name(:centroid),
-          required: false
-        )
-
-        f.text_field(
-          name: :external_project_id,
-          label: attribute_name(:external_project_id),
-          required: false
-        )
       end
     end
   end
