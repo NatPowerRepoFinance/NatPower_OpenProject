@@ -1,0 +1,34 @@
+<%=
+  labelled_tabular_form_for :gis_project,
+    url: project_gis_project_path(@project),
+    method: :patch,
+    html: { class: "form -vertical -bordered -medium-compressed" } do |f|
+%>
+  <div class="form--field">
+    <%= f.label :name, "Project name", class: "form--label" %>
+    <div class="form--field-container">
+      <%= f.text_field :name,
+                       value: @gis_form["name"],
+                       class: "form--text-field" %>
+    </div>
+  </div>
+
+  <div class="form--field">
+    <%= f.label :status_code, "Status code", class: "form--label" %>
+    <div class="form--field-container">
+      <%= f.number_field :status_code,
+                         value: @gis_form["status_code"],
+                         class: "form--text-field" %>
+      <%# Later you can replace this with a select using lookupdata %>
+    </div>
+  </div>
+
+  <%# Add more fields here as needed, following the same pattern %>
+
+  <div class="form--field">
+    <%= f.submit t(:button_save), class: "button -primary" %>
+    <%= link_to t(:button_cancel),
+                project_overview_path(@project),
+                class: "button" %>
+  </div>
+<% end %>

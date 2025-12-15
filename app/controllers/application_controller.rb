@@ -245,19 +245,80 @@ class ApplicationController < ActionController::Base
 
   # Find project of id params[:id]
   # Note: find() is Project.friendly.find()
+  # If param is numeric and not found in DB, fetch from API (for API projects)
   def find_project
-    @project = Project.find(params[:id])
+    project_id = params[:id]
+    if project_id.to_s.match?(/\A\d+\z/)
+      # Try database first, then API
+      @project = Project.find_by(id: project_id.to_i)
+      unless @project
+        # Fetch detailed project data from API
+        gis_service = ::GisAPI::GisApiService.new
+        detail_result = gis_service.get_project(project_id)
+        
+        if detail_result.success?
+          # Use detailed data if available
+          detailed_data = detail_result.result
+          @project = ::API::V3::Projects::ExternalApiProjectAdapter.new(detailed_data, detailed_data: detailed_data)
+        else
+          # Don't fallback to fetching all projects - that's too slow
+          # Just raise RecordNotFound if the single project endpoint fails
+          raise ActiveRecord::RecordNotFound
+        end
+      end
+    else
+      @project = Project.find(project_id)
+    end
   end
 
   # Find project of id params[:project_id]
   # Note: find() is Project.friendly.find()
+  # If param is numeric and not found in DB, fetch from API (for API projects)
   def find_project_by_project_id
-    @project = Project.find(params[:project_id])
+    project_id = params[:project_id]
+    if project_id.to_s.match?(/\A\d+\z/)
+      # Try database first, then API
+      @project = Project.find_by(id: project_id.to_i)
+      unless @project
+        # Simply call project details API
+        gis_service = ::GisAPI::GisApiService.new
+        detail_result = gis_service.get_project(project_id)
+        
+        if detail_result.success?
+          detailed_data = detail_result.result
+          Rails.logger.info("ApplicationController: API response received, type: #{detailed_data.class}, keys: #{detailed_data.keys.inspect if detailed_data.is_a?(Hash)}")
+          @project = ::API::V3::Projects::ExternalApiProjectAdapter.new(detailed_data, detailed_data: detailed_data)
+          Rails.logger.info("ApplicationController: Created ExternalApiProjectAdapter, project class: #{@project.class.name}")
+        else
+          raise ActiveRecord::RecordNotFound
+        end
+      end
+    else
+      @project = Project.find(project_id)
+    end
   end
 
   # Find project by project_id if given
+  # If param is numeric and not found in DB, fetch from API (for API projects)
   def find_optional_project
-    @project = Project.find(params[:project_id]) if params[:project_id].present?
+    return unless params[:project_id].present?
+
+    project_id = params[:project_id]
+    if project_id.to_s.match?(/\A\d+\z/)
+      # Try database first, then API
+      @project = Project.find_by(id: project_id.to_i)
+      unless @project
+        # Fetch detailed project data from API (single project endpoint - fast)
+        gis_service = ::GisAPI::GisApiService.new
+        detail_result = gis_service.get_project(project_id)
+        if detail_result.success?
+          detailed_data = detail_result.result
+          @project = ::API::V3::Projects::ExternalApiProjectAdapter.new(detailed_data, detailed_data: detailed_data)
+        end
+      end
+    else
+      @project = Project.find(project_id)
+    end
   rescue ActiveRecord::RecordNotFound
     render_404
   end

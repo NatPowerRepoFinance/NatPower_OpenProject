@@ -71,8 +71,13 @@ module Projects
     # but the [project, level] array from the helper
     def rows
       @rows ||= begin
-        projects_enumerator = ->(model) { to_enum(:projects_with_levels_order_sensitive, model).to_a }
-        instance_exec(model, &projects_enumerator)
+        Rails.logger.info("Building rows from model: #{model.class}, count: #{model.respond_to?(:length) ? model.length : 'unknown'}")
+        result = []
+        projects_with_levels_order_sensitive(model) do |project, level|
+          result << [project, level]
+        end
+        Rails.logger.info("Rows built: #{result.length} rows")
+        result
       end
     end
 
@@ -141,53 +146,95 @@ module Projects
 
     def columns
       @columns ||= begin
-        columns = query.selects.reject { |select| select.is_a?(::Queries::Selects::NotExistingSelect) }
-
-        index = columns.index { |column| column.attribute == :name }
-        columns.insert(index, ::Queries::Projects::Selects::Default.new(:hierarchy)) if index
-
-        columns
+        # Only show id and name columns since those are the only fields from the API
+        [
+          ::Queries::Projects::Selects::Default.new(:id),
+          ::Queries::Projects::Selects::Default.new(:name)
+        ]
       end
     end
 
     def projects(query)
-      scope = query.results
+      # Fetch projects from external GIS API instead of database
+      gis_service = ::GisAPI::GisApiService.new
+      result = gis_service.get_projects
 
-      # The two columns associated with the
-      # * disk storage
-      # * latest activity
-      # information are only available to admins.
-      # For non admins, the performance penalty of fetching the information therefore needs never be paid.
-      if User.current.admin?
-        scope = scope
-                  .with_required_storage
-                  .with_latest_activity
+      if result.success?
+        data = result.result
+        Rails.logger.info("GIS API response data type: #{data.class}, keys: #{data.keys.inspect if data.is_a?(Hash)}")
+        
+        # Transform API data to array if needed
+        projects_data = if data.is_a?(Array)
+                          data
+                        elsif data.is_a?(Hash)
+                          # Check if data has nested structure
+                          if data.key?("data")
+                            extracted = data["data"]
+                            extracted.is_a?(Array) ? extracted : [extracted].compact
+                          elsif data.key?(:data)
+                            extracted = data[:data]
+                            extracted.is_a?(Array) ? extracted : [extracted].compact
+                          elsif data.key?("projects")
+                            data["projects"]
+                          elsif data.key?(:projects)
+                            data[:projects]
+                          else
+                            []
+                          end
+                        else
+                          []
+                        end
+
+        Rails.logger.info("Projects data count: #{projects_data.length}, sample: #{projects_data.first.inspect if projects_data.any?}")
+
+        # Convert API data to adapter objects that behave like ActiveRecord models
+        adapted_projects = projects_data.map do |project_data|
+          # Ensure project_data is a hash and has an id
+          if project_data.is_a?(Hash) && (project_data["id"] || project_data[:id] || project_data["projectId"] || project_data[:projectId])
+            ::API::V3::Projects::ExternalApiProjectAdapter.new(project_data)
+          else
+            Rails.logger.warn("Skipping invalid project data: #{project_data.inspect}")
+            nil
+          end
+        end.compact
+
+        Rails.logger.info("Adapted projects count: #{adapted_projects.length}")
+
+        # Create a paginated array wrapper using will_paginate
+        page = helpers.page_param(params) || 1
+        per_page = helpers.per_page_param(params) || 25
+        
+        paginated_projects = WillPaginate::Collection.create(page, per_page, adapted_projects.length) do |pager|
+          offset = (page - 1) * per_page
+          pager.replace(adapted_projects[offset, per_page] || [])
+        end
+        
+        Rails.logger.info("Paginated projects count: #{paginated_projects.length}, total: #{paginated_projects.total_entries}")
+        paginated_projects
+      else
+        # Return empty result on error
+        Rails.logger.error("Failed to fetch projects from GIS API: #{result.errors.full_messages.join(', ')}")
+        WillPaginate::Collection.create(1, 25, 0) do |pager|
+          pager.replace([])
+        end
       end
-
-      scope
-        .includes(:custom_values, :enabled_modules)
-        .paginate(page: helpers.page_param(params), per_page: helpers.per_page_param(params))
     end
 
     def projects_with_levels_order_sensitive(projects, &)
-      if sorted_by_lft?
-        Project.project_tree(projects, &)
-      else
-        projects_with_level(projects, &)
+      # For API projects, we don't have hierarchy, so just yield each project with level 0
+      # Ensure we can iterate over the collection (WillPaginate::Collection is enumerable)
+      projects_array = projects.respond_to?(:to_a) ? projects.to_a : projects
+      Rails.logger.info("Iterating over #{projects_array.length} projects")
+      projects_array.each do |project|
+        Rails.logger.info("Yielding project: id=#{project.id}, name=#{project.name}")
+        yield project, 0
       end
     end
 
     def projects_with_level(projects, &)
-      ancestors = []
-
+      # Simplified for API projects - no hierarchy
       projects.each do |project|
-        while !ancestors.empty? && !project.is_descendant_of?(ancestors.last)
-          ancestors.pop
-        end
-
-        yield project, ancestors.count
-
-        ancestors << project
+        yield project, 0
       end
     end
 

@@ -1,35 +1,33 @@
 <%=
   widget_wrapper do
-    Rails.logger.info("GIS Project widget template: gis_data present?=#{gis_data.present?}, gis_data=#{gis_data.inspect}")
-    
-    if gis_data.present?
-      # Flatten the data structure to show each attribute as a separate field
-      flattened_data = flattened_gis_data
-      Rails.logger.info("GIS Project widget template: flattened_data present?=#{flattened_data.present?}, size=#{flattened_data.size}, keys=#{flattened_data.keys.inspect}")
-      
-      if flattened_data.present? && flattened_data.any?
-        # Use CSS Grid to display 2-3 fields per row
-        content_tag(:div, class: "gis-project-fields-grid", style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--base-size-16, 16px);") do
-          flattened_data.each do |field_label, field_value|
-            concat(
-              render(Primer::Alpha::FormControl.new(label: field_label)) do |control|
-                control.with_input do
-                  content_tag(
-                    :span,
-                    format_value_for_display(field_value),
-                    class: "gis-project-field-value"
-                  )
+    fields = flattened_gis_data
+
+    if fields.any?
+      # Split attributes into three vertical columns using existing grid classes
+      content_tag(:div, class: "grid-block") do
+        fields.to_a.in_groups(3, nil).each do |group|
+          concat(
+            content_tag(:div, class: "grid-content medium-4 small-12") do
+              content_tag(:div, class: "attributes-map -minimal-keys") do
+                group.compact.each do |label, value|
+                  next if value.nil? || value == ""
+
+                  concat content_tag(:div, label, class: "attributes-map--key")
+
+                  formatted =
+                    if value.is_a?(TrueClass) || value.is_a?(FalseClass)
+                      render(Primer::Alpha::ToggleSwitch.new(checked: value, enabled: false, size: :small))
+                    else
+                      format_value_for_display(map_lookup_value(label, value))
+                    end
+
+                  concat content_tag(:div, formatted, class: "attributes-map--value")
                 end
               end
-            )
-          end
-          nil
+            end
+          )
         end
-      else
-          render(Primer::Beta::Text.new(color: :subtle)) { t(".no_data") }
-        end
-    elsif ENV["GIS_API_KEY"].blank?
-      render(Primer::Beta::Text.new(color: :subtle)) { t(".no_api_key") }
+      end
     else
       render(Primer::Beta::Text.new(color: :subtle)) { t(".no_data") }
     end
