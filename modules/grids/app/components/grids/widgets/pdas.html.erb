@@ -1,17 +1,6 @@
 <%=
   widget_wrapper do |container|
-
-    concat(
-      render(Primer::Beta::Button.new(
-        scheme: :primary,
-        leading_icon: :plus,
-        tag: :a,
-        href: new_project_settings_pda_nf_path(project),
-        classes: "mb-3 col-2"
-      )) { "Add PDA" }
-    )
-
-    if pda_nfs.any?
+    if pdas.any?
       container.with_row do
         content_tag(:div, class: "generic-table--container") do
           content_tag(:div, class: "generic-table--results-container") do
@@ -20,50 +9,27 @@
                 content_tag(:thead) do
                   content_tag(:tr) do
                     concat(content_tag(:th) { "ID" })
-                    concat(content_tag(:th) { "PDA ID" })
-                    concat(content_tag(:th) { "Code" })
-                    concat(content_tag(:th) { "Actions" })
+                    concat(content_tag(:th) { "Name" })
+                    concat(content_tag(:th) { "Status" })
                   end
                 end
               )
               concat(
                 content_tag(:tbody) do
-                  pda_nfs.each_with_index do |pda_nf, index|
+                  pdas.each_with_index do |pda, index|
+                    next unless pda[:id].present? || pda[:name].present?
+                    
+                    pda_url = pda_path(pda[:id])
                     concat(
                       content_tag(:tr) do
-                        concat(
-                          content_tag(:td) do
-                            link_to(index + 1, project_settings_pda_nf_path(project, pda_nf))
-                          end
-                        )
-                        concat(content_tag(:td, pda_nf.pda_id.to_s))
-                        concat(content_tag(:td, pda_nf.code.to_s))
-                        concat(
-                          content_tag(:td, class: "buttons") do
-                            flex_layout do |actions|
-                              actions.with_column(mr: 1) do
-                                render(Primer::Beta::Button.new(
-                                  scheme: :default,
-                                  size: :small,
-                                  tag: :a,
-                                  href: edit_project_settings_pda_nf_path(project, pda_nf)
-                                )) { "Edit" }
-                              end
-                              actions.with_column do
-                                render(Primer::Beta::Button.new(
-                                  scheme: :danger,
-                                  size: :small,
-                                  tag: :a,
-                                  href: project_settings_pda_nf_path(project, pda_nf),
-                                  data: {
-                                    turbo_method: :delete,
-                                    turbo_confirm: I18n.t(:text_are_you_sure)
-                                  }
-                                )) { "Delete" }
-                              end
-                            end
-                          end
-                        )
+                        if pda_url
+                          concat(content_tag(:td) { link_to(pda[:id].to_s, pda_url, class: "pda-link") })
+                          concat(content_tag(:td) { link_to(pda[:name].to_s, pda_url, class: "pda-link") })
+                        else
+                          concat(content_tag(:td, pda[:id].to_s))
+                          concat(content_tag(:td, pda[:name].to_s))
+                        end
+                        concat(content_tag(:td, pda[:status].to_s.titleize))
                       end
                     )
                   end
@@ -75,8 +41,10 @@
       end
     else
       container.with_row do
-        render(Primer::Beta::Text.new(color: :subtle)) { t(".no_pdas") }
+        render(Primer::Beta::Text.new(color: :subtle)) { t(".no_pdas", default: "No PDAs found") }
       end
     end
   end
 %>
+
+

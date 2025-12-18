@@ -52,11 +52,11 @@ end %>
   end
 %>
 
-<% if @pda_nf.errors.any? %>
+<% if @pda_nf&.errors&.any? %>
   <%= error_messages_for(@pda_nf) %>
 <% end %>
 
-<% if params[:id].present? && @pda_nf.persisted? %>
+<% if (params[:id].present? && @pda_nf&.persisted?) || params[:pda_id].present? %>
   <%# Show view for a specific PDA NF %>
   <div class="generic-form">
     <fieldset class="form--fieldset">
@@ -65,10 +65,11 @@ end %>
       <div class="form--field">
         <label class="form--label">PDA ID</label>
         <div class="form--field-container">
-          <input type="text" value="<%= h(@pda_nf.pda_id) %>" readonly class="form--text-field" />
+          <input type="text" value="<%= h(@pda_id || @pda_nf&.pda_id) %>" readonly class="form--text-field" />
         </div>
       </div>
 
+      <% if @pda_nf&.persisted? %>
       <div class="form--field">
         <label class="form--label">Initial Code</label>
         <div class="form--field-container">
@@ -82,7 +83,9 @@ end %>
           <input type="text" value="<%= h(@pda_nf.code) %>" readonly class="form--text-field" />
         </div>
       </div>
+      <% end %>
 
+      <% if @pda_nf&.persisted? %>
       <div class="form--field">
         <label class="form--label">Project Manager GUID</label>
         <div class="form--field-container">
@@ -180,6 +183,7 @@ end %>
           <input type="checkbox" <%= 'checked' if @pda_nf.transmisson_substation %> disabled />
         </div>
       </div>
+      <% end %>
       </div>
       <% if @pda_api_data.present? %>
         <div class="pda-details-grid" style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
@@ -200,7 +204,9 @@ end %>
         </div>
       <% end %>
       <div class="form--field" style="grid-column: 1 / -1; margin-top: 1rem;">
-        <%= link_to t(:button_edit), edit_project_settings_pda_nf_path(@project, @pda_nf), class: "button -primary" %>
+        <% if @pda_nf&.persisted? %>
+          <%= link_to t(:button_edit), edit_project_settings_pda_nf_path(@project, @pda_nf), class: "button -primary" %>
+        <% end %>
         <%= link_to t(:button_back), project_settings_pda_nfs_path(@project), class: "button" %>
       </div>
     </fieldset>
@@ -213,6 +219,7 @@ end %>
         Land Negotiations
         <span class="form--toolbar-item" style="color: #656d76; font-size: 0.875rem; margin-left: 1rem;">
         </span>
+        <% if @pda_nf&.persisted? %>
         <div class="form--toolbar">
           <span class="form--toolbar-item">
             <%= link_to "Add Land Negotiation",
@@ -220,35 +227,99 @@ end %>
                         class: "button -primary" %>
           </span>
         </div>
+        <% end %>
       </legend>
       
       <% if @land_negotiations_api_data.present? && @land_negotiations_api_data.any? %>
-        <div class="generic-table--container" style="margin-bottom: 2rem;">
-          <div class="generic-table--results-container">
-            <table class="generic-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Land Negotiation ID</th>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Friendly Name</th>
-                  <th>Contract Status</th>
-                  <th>Negotiation Status</th>
-                  <th>Success Rating</th>
-                  <th>Estimated Completion</th>
-                  <th>Status</th>
-                  <th>Budget ID</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% @land_negotiations_api_data.each do |neg_data| %>
-                  <tr>
-                    <td><%= neg_data["id"] if neg_data["id"].present? %></td>
-                    <td>
-                      <% negotiation_id = neg_data["landNegotiationId"] || neg_data["id"] %>
-                      <% if negotiation_id.present? %>
-                        <%= link_to negotiation_id,
+        <div style="margin-bottom: 2rem;">
+          <% @land_negotiations_api_data.each_with_index do |neg_data, index| %>
+            <% negotiation_id = neg_data["landNegotiationId"] || neg_data["id"] %>
+            <% negotiation_title = neg_data["friendlyName"] || neg_data["friendly_name"] || neg_data["name"] || neg_data["code"] || "Negotiation ##{negotiation_id}" %>
+            <% land_titles = neg_data["titleNo"] || [] %>
+            
+            <%= render(Primer::OpenProject::CollapsibleSection.new(id: "negotiation-#{negotiation_id || index}", display: :block, mb: 3, collapsed: true)) do |section| %>
+              <% section.with_title(tag: :h3) do %>
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                  <span style="font-weight: 600; font-size: 1rem;"><%= h(negotiation_title) %></span>
+                  <% if neg_data["code"].present? %>
+                    <span style="background-color: #ddf4ff; color: #0969da; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500;">
+                      <%= h(neg_data["code"]) %>
+                    </span>
+                  <% end %>
+                  <% if negotiation_id.present? %>
+                    <%# Determine PDA ID for the link - prefer @pda_id, then params, then database record %>
+                    <% pda_id_for_link = @pda_id || params[:pda_id] || @pda_nf&.pda_id || @pda_nf&.id || 0 %>
+                    <span style="color: #656d76; font-size: 0.875rem;">
+                      ID: <%= link_to negotiation_id, 
+                                      negotiation_project_settings_pda_nf_path(@project, pda_id_for_link, negotiation_id: negotiation_id),
+                                      style: "color: #0969da; text-decoration: none; font-weight: 500;" %>
+                    </span>
+                  <% end %>
+                  <% if neg_data["status"].present? %>
+                    <% status_color = case neg_data["status"].to_s.downcase
+                                       when "active" then "#1a7f37"
+                                       when "completed", "success" then "#0969da"
+                                       when "pending", "in_progress" then "#9a6700"
+                                       when "cancelled", "failed" then "#cf222e"
+                                       else "#656d76"
+                                     end %>
+                    <span style="color: <%= status_color %>; font-size: 0.875rem; font-weight: 500;">
+                      <%= h(neg_data["status"]) %>
+                    </span>
+                  <% end %>
+                  <% if land_titles.is_a?(Array) && land_titles.any? %>
+                    <span style="background-color: #f6f8fa; color: #656d76; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.875rem;">
+                      <%= pluralize(land_titles.length, "land title") %>
+                    </span>
+                  <% end %>
+                </div>
+              <% end %>
+              
+              <% section.with_collapsible_content do %>
+                <div style="padding: 1rem 0;">
+                  <%# Negotiation Details %>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <% if neg_data["code"].present? %>
+                      <div>
+                        <strong>Code:</strong> <%= h(neg_data["code"]) %>
+                      </div>
+                    <% end %>
+                    <% if neg_data["name"].present? && neg_data["name"] != negotiation_title %>
+                      <div>
+                        <strong>Name:</strong> <%= h(neg_data["name"]) %>
+                      </div>
+                    <% end %>
+                    <% if (neg_data["contractStatus"] || neg_data["contract_status"]).present? %>
+                      <div>
+                        <strong>Contract Status:</strong> <%= h(neg_data["contractStatus"] || neg_data["contract_status"]) %>
+                      </div>
+                    <% end %>
+                    <% if (neg_data["negotiationStatus"] || neg_data["negotiation_status"]).present? %>
+                      <div>
+                        <strong>Negotiation Status:</strong> <%= h(neg_data["negotiationStatus"] || neg_data["negotiation_status"]) %>
+                      </div>
+                    <% end %>
+                    <% if (neg_data["successRating"] || neg_data["success_rating"]).present? %>
+                      <div>
+                        <strong>Success Rating:</strong> <%= h(neg_data["successRating"] || neg_data["success_rating"]) %>
+                      </div>
+                    <% end %>
+                    <% if (neg_data["estimatedCompletion"] || neg_data["estimated_completion"]).present? %>
+                      <div>
+                        <strong>Estimated Completion:</strong>
+                        <% est_date = neg_data["estimatedCompletion"] || neg_data["estimated_completion"] %>
+                        <% parsed_date = begin; Date.parse(est_date.to_s); rescue; nil; end %>
+                        <%= parsed_date ? parsed_date.strftime("%B %d, %Y") : est_date %>
+                      </div>
+                    <% end %>
+                    <% if (neg_data["budgetId"] || neg_data["budget_id"]).present? %>
+                      <div>
+                        <strong>Budget ID:</strong> <%= neg_data["budgetId"] || neg_data["budget_id"] %>
+                      </div>
+                    <% end %>
+                    <% if negotiation_id.present? && @pda_nf&.persisted? %>
+                      <div>
+                        <%= link_to "View Contracts",
                                     negotiation_contracts_project_settings_pda_nf_path(
                                       @project,
                                       @pda_nf,
@@ -256,29 +327,158 @@ end %>
                                       negotiation_code: neg_data["code"],
                                       negotiation_name: neg_data["name"],
                                       negotiation_friendly_name: neg_data["friendlyName"] || neg_data["friendly_name"]
-                                    ) %>
-                      <% end %>
-                    </td>
-                    <td><%= h(neg_data["code"]) if neg_data["code"].present? %></td>
-                    <td><%= h(neg_data["name"]) if neg_data["name"].present? %></td>
-                    <td><%= h(neg_data["friendlyName"] || neg_data["friendly_name"]) if (neg_data["friendlyName"] || neg_data["friendly_name"]).present? %></td>
-                    <td><%= h(neg_data["contractStatus"] || neg_data["contract_status"]) if (neg_data["contractStatus"] || neg_data["contract_status"]).present? %></td>
-                    <td><%= h(neg_data["negotiationStatus"] || neg_data["negotiation_status"]) if (neg_data["negotiationStatus"] || neg_data["negotiation_status"]).present? %></td>
-                    <td><%= h(neg_data["successRating"] || neg_data["success_rating"]) if (neg_data["successRating"] || neg_data["success_rating"]).present? %></td>
-                    <td>
-                      <% if (neg_data["estimatedCompletion"] || neg_data["estimated_completion"]).present? %>
-                        <% est_date = neg_data["estimatedCompletion"] || neg_data["estimated_completion"] %>
-                        <% parsed_date = begin; Date.parse(est_date.to_s); rescue; nil; end %>
-                        <%= parsed_date ? parsed_date.strftime("%B %d, %Y") : est_date %>
-                      <% end %>
-                    </td>
-                    <td><%= h(neg_data["status"]) if neg_data["status"].present? %></td>
-                    <td><%= neg_data["budgetId"] || neg_data["budget_id"] if (neg_data["budgetId"] || neg_data["budget_id"]).present? %></td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
+                                    ),
+                                    class: "button -primary" %>
+                      </div>
+                    <% end %>
+                  </div>
+                  
+                  <%# Land Titles Section %>
+                  <% if land_titles.is_a?(Array) && land_titles.any? %>
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #d0d7de;">
+                      <h4 style="margin-bottom: 1rem; font-size: 1rem; font-weight: 600;">Land Titles</h4>
+                      <div class="generic-table--container">
+                        <div class="generic-table--results-container">
+                          <table class="generic-table">
+                            <colgroup>
+                              <col>
+                              <col>
+                              <col>
+                              <col>
+                              <col>
+                              <col>
+                              <col>
+                              <col>
+                              <col>
+                              <col>
+                            </colgroup>
+                            <thead>
+                              <tr>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>ID</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Land Title ID</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Negotiation Status</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Number of Parcels</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Total Acres</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Used Acres</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Is Deleted</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Success Rating</span>
+                                    </div>
+                                  </div>
+                                </th>
+                                <th>
+                                  <div class="generic-table--sort-header-outer">
+                                    <div class="generic-table--sort-header">
+                                      <span>Estimated Completion</span>
+                                    </div>
+                                  </div>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <% land_titles.each do |title| %>
+                                <%# Handle both object and string formats %>
+                                <% if title.is_a?(Hash) %>
+                                  <% title_no = title["landTitleId"] || title["land_title_id"] || title["titleNo"] || title["title_no"] %>
+                                  <% pda_id_for_link = @pda_id || params[:pda_id] || @pda_nf&.pda_id || @pda_nf&.id || 0 %>
+                                  <tr>
+                                    <td><%= title["id"] if title["id"].present? %></td>
+                                    <td>
+                                      <% if title_no.present? %>
+                                        <%= link_to h(title_no), 
+                                                    land_title_api_project_settings_pda_nf_path(@project, pda_id_for_link, negotiation_id: negotiation_id, title_no: title_no),
+                                                    style: "color: #0969da; text-decoration: none; font-weight: 500;" %>
+                                      <% end %>
+                                    </td>
+                                    <td><%= h(title["negotiationStatus"] || title["negotiation_status"]) if (title["negotiationStatus"] || title["negotiation_status"]).present? %></td>
+                                    <td><%= title["numOfParcels"] || title["num_of_parcels"] if (title["numOfParcels"] || title["num_of_parcels"]).present? %></td>
+                                    <td><%= number_with_precision(title["totalAcre"] || title["total_acre"], precision: 2) if (title["totalAcre"] || title["total_acre"]).present? %></td>
+                                    <td><%= number_with_precision(title["usedAcre"] || title["used_acre"], precision: 2) if (title["usedAcre"] || title["used_acre"]).present? %></td>
+                                    <td><%= (title["isDeleted"] || title["is_deleted"]) ? "Yes" : "No" unless (title["isDeleted"] || title["is_deleted"]).nil? %></td>
+                                    <td><%= h(title["successRating"] || title["success_rating"]) if (title["successRating"] || title["success_rating"]).present? %></td>
+                                    <td>
+                                      <% if (title["estimatedCompletion"] || title["estimated_completion"]).present? %>
+                                        <% est_date = title["estimatedCompletion"] || title["estimated_completion"] %>
+                                        <% parsed_date = begin; Date.parse(est_date.to_s); rescue; nil; end %>
+                                        <%= parsed_date ? parsed_date.strftime("%B %d, %Y") : est_date %>
+                                      <% end %>
+                                    </td>
+                                  </tr>
+                                <% else %>
+                                  <%# Fallback for string/numeric values - make it a link if it's a valid title number %>
+                                  <% title_no_str = title.to_s %>
+                                  <% pda_id_for_link = @pda_id || params[:pda_id] || @pda_nf&.pda_id || @pda_nf&.id || 0 %>
+                                  <tr>
+                                    <td colspan="9">
+                                      <% if title_no_str.present? %>
+                                        <%= link_to h(title_no_str), 
+                                                    land_title_api_project_settings_pda_nf_path(@project, pda_id_for_link, negotiation_id: negotiation_id, title_no: title_no_str),
+                                                    style: "color: #0969da; text-decoration: none; font-weight: 500;" %>
+                                      <% else %>
+                                        <%= h(title_no_str) %>
+                                      <% end %>
+                                    </td>
+                                  </tr>
+                                <% end %>
+                              <% end %>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  <% elsif land_titles.is_a?(Array) %>
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #d0d7de;">
+                      <p class="form--field-instructions">No land titles available for this negotiation.</p>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+          <% end %>
         </div>
       <% else %>
         <p class="form--field-instructions">No land negotiations returned from the API yet.</p>
@@ -291,6 +491,7 @@ end %>
     <fieldset class="form--fieldset">
       <legend class="form--fieldset-legend">
         Land Parcels
+        <% if @pda_nf&.persisted? %>
         <div class="form--toolbar">
           <span class="form--toolbar-item">
             <%= link_to "Add Land Parcel",
@@ -298,6 +499,7 @@ end %>
                         class: "button -primary" %>
           </span>
         </div>
+        <% end %>
       </legend>
       
       <%# Display existing land parcels %>
