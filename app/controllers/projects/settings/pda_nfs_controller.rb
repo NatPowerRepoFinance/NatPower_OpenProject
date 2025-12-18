@@ -37,6 +37,7 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
 
   skip_before_action :authorize,
                      only: %i[
+                       index
                        show
                        new
                        create
@@ -69,6 +70,12 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
                        destroy_land_title
                        negotiation_contracts
                      ]
+
+  def index
+    @pda_nfs = @project.pda_nfs.order(created_date: :desc)
+    @pda_nf = @project.pda_nfs.build(project_id: @project.id)
+    render :show
+  end
 
   def show
     if params[:pda_nf_id].present?
@@ -726,3 +733,5 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
     )
   end
 end
+
+

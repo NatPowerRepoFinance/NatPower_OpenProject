@@ -157,19 +157,6 @@ module API
                  writable: ->(*) { represented.writable?(:last_updated_date) },
                  as: :lastUpdatedDate
 
-          schema :centroid,
-                 type: "String",
-                 name_source: ->(*) { I18n.t("activerecord.attributes.project.centroid") },
-                 required: false,
-                 writable: ->(*) { represented.writable?(:centroid) }
-
-          schema :external_project_id,
-                 type: "String",
-                 name_source: ->(*) { I18n.t("activerecord.attributes.project.external_project_id") },
-                 required: false,
-                 writable: ->(*) { represented.writable?(:external_project_id) },
-                 as: :externalProjectId
-
           # Cannot be cached here due to custom field visibility checks on a user level.
           # However caching is still applied further down in the `section_representation` method.
           property :attribute_groups,

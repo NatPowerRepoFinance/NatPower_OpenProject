@@ -256,8 +256,6 @@ module API
         property :last_updated, render_nil: true, as: :lastUpdated
         property :deleted_date, render_nil: true, as: :deletedDate
         property :last_updated_date, render_nil: true, as: :lastUpdatedDate
-        property :centroid, render_nil: true
-        property :external_project_id, render_nil: true, as: :externalProjectId
 
         def _type
           "Project"

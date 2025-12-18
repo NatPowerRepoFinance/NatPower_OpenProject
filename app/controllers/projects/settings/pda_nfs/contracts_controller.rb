@@ -89,7 +89,7 @@ class Projects::Settings::PdaNfs::ContractsController < Projects::Settings::PdaN
     {
       "landNegotiationId" => @api_negotiation_id || land_negotiation.land_negotiation_id || land_negotiation.id,
       "pdaId" => pda_nf.pda_id || pda_nf.id,
-      "projectId" => @project.external_project_id || @project.id,
+      "projectId" => @project.id,
       # The ERP API expects the numeric status ID, not the label.
       # Default to 1 (e.g., ACTIVE) – this can be overridden in the form.
       "status" => 1

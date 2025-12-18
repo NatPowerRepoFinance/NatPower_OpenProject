@@ -302,7 +302,7 @@ Rails.application.routes.draw do
         resource :repository, only: %i[show], controller: "repository"
         resource :versions, only: %i[show]
         resource :storage, only: %i[show], controller: "storage"
-        resources :pda_nfs, only: %i[show new create edit update destroy] do
+        resources :pda_nfs, only: %i[index show new create edit update destroy] do
           resources :negotiations, only: %i[show new create edit update destroy], controller: "pda_nfs" do
             resources :contracts, only: %i[new create], controller: "pda_nfs/contracts"
 
@@ -352,6 +352,11 @@ Rails.application.routes.draw do
           resource :categories, only: %i[show update]
         end
       end
+
+      # Edit external GIS project details (name, status_code, etc.)
+      resource :gis_project,
+               only: %i[edit update],
+               controller: "projects/gis_project"
 
       resource :templated, only: %i[create destroy], controller: "templated"
       resource :archive, only: %i[create destroy], controller: "archive" do

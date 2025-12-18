@@ -33,12 +33,11 @@ module API
     module Projects
       class ProjectsAPI < ::API::OpenProjectAPI
         resources :projects do
-          get &::API::V3::Utilities::Endpoints::SqlFallbackedIndex.new(model: Project,
-                                                                       scope: -> {
-                                                                         Project
-                                                                           .includes(ProjectRepresenter.to_eager_load)
-                                                                       })
-                                                                  .mount
+          get &::API::V3::Utilities::Endpoints::ExternalApiIndex.new(
+            api_service: -> { GisAPI::GisApiService.new.get_projects },
+            render_representer: ProjectCollectionRepresenter,
+            self_path: :projects
+          ).mount
 
           post &::API::V3::Utilities::Endpoints::Create.new(model: Project,
                                                             params_modifier: ->(attributes) {
@@ -57,11 +56,33 @@ module API
           end
           route_param :id do
             after_validation do
-              @project = if current_user.admin?
-                           Project.all
-                         else
-                           Project.visible(current_user)
-                         end.find(params[:id])
+              project_id = params[:id]
+              if project_id.to_s.match?(/\A\d+\z/)
+                # Try database first, then API (for GIS projects)
+                @project = if current_user.admin?
+                             Project.all
+                           else
+                             Project.visible(current_user)
+                           end.find_by(id: project_id.to_i)
+                
+                unless @project
+                  # Fetch detailed project data from API (single project endpoint - fast)
+                  gis_service = ::GisAPI::GisApiService.new
+                  detail_result = gis_service.get_project(project_id)
+                  if detail_result.success?
+                    detailed_data = detail_result.result
+                    @project = ::API::V3::Projects::ExternalApiProjectAdapter.new(detailed_data, detailed_data: detailed_data)
+                  else
+                    raise ActiveRecord::RecordNotFound
+                  end
+                end
+              else
+                @project = if current_user.admin?
+                             Project.all
+                           else
+                             Project.visible(current_user)
+                           end.find(project_id)
+              end
             end
 
             get &::API::V3::Utilities::Endpoints::Show.new(model: Project).mount

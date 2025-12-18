@@ -50,6 +50,9 @@ module Projects
     end
 
     def favorited
+      # Skip favorite button if project doesn't have an id
+      return "" unless project&.id.present?
+      
       render(Primer::Beta::IconButton.new(
                icon: currently_favorited? ? "star-fill" : "star",
                scheme: :invisible,
@@ -67,6 +70,7 @@ module Projects
     end
 
     def currently_favorited?
+      return false unless project&.id.present?
       @currently_favorited ||= favorited_project_ids.include?(project.id)
     end
 
@@ -148,20 +152,23 @@ module Projects
     end
 
     def id
-      project.id.to_s
+      # Make ID a link to project overview page
+      project_identifier = project.respond_to?(:identifier) ? project.identifier : project.id.to_s
+      helpers.link_to(
+        project.id.to_s,
+        helpers.project_overview_path(project_identifier),
+        { data: { turbo: false } }
+      )
     end
 
     def name
-      content = content_tag(:i, "", class: "projects-table--hierarchy-icon")
-
-      if project.archived?
-        content << " "
-        content << content_tag(:span, I18n.t("project.archive.archived"), class: "archived-label")
-      end
-
-      content << " "
-      content << helpers.link_to_project(project, {}, { data: { turbo: false } }, false)
-      content
+      # For API projects, show the name as a link to project overview
+      project_identifier = project.respond_to?(:identifier) ? project.identifier : project.id.to_s
+      helpers.link_to(
+        project.name,
+        helpers.project_overview_path(project_identifier),
+        { data: { turbo: false } }
+      )
     end
 
     def project_status

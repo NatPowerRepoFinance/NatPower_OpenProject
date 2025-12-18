@@ -111,7 +111,15 @@ module OpenProject
                          when nil
                            :global
                          else
-                           raise "Unknown context: #{context_type}"
+                           # Check if it's an ExternalApiProjectAdapter (project-like object from external API)
+                           if context_type.is_a?(::API::V3::Projects::ExternalApiProjectAdapter)
+                             :project
+                           # Check if object responds to model_name and it matches Project (for adapters/decorators)
+                           elsif context_type.respond_to?(:model_name) && context_type.model_name == Project.model_name
+                             :project
+                           else
+                             raise "Unknown context: #{context_type}"
+                           end
                          end
 
         @permissible_on.include?(context_symbol)

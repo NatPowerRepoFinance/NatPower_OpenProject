@@ -47,11 +47,15 @@ module Grids
       end
 
       def render?
-        project.present?
+        project.present? && project.respond_to?(:api_data)
       end
 
       def flattened_gis_data
-        flatten_gis_data(gis_data || {})
+        return {} unless gis_data.is_a?(Hash) && gis_data.any?
+        
+        flattened = flatten_gis_data(gis_data)
+        # Return flattened if it has data, otherwise return original (at least show something)
+        flattened.any? ? flattened : gis_data
       end
 
       def format_value_for_display(value)
@@ -65,41 +69,101 @@ module Grids
         end
       end
 
+      def wrapper_arguments
+        # Make widget full width (col-12) to display all project details
+        { full_width: true }
+      end
+
+      # Map specific GIS fields to human-readable values using lookup data
+      # Currently supports mapping Statuscode → status description via lookup API
+      #
+      # @param label [String] The flattened field label (e.g., "Statuscode")
+      # @param value [Object] The raw value from the API
+      # @return [Object] The mapped value (e.g., "Active") or original value if no mapping found
+      def map_lookup_value(label, value)
+        return value unless label.is_a?(String)
+
+        normalized_label = label.strip.downcase
+
+        if normalized_label == "statuscode" || normalized_label.include?("status code")
+          mapped = status_description_for(value)
+          return mapped if mapped.present?
+        end
+
+        value
+      end
+
       private
 
       def fetch_gis_data
-        Rails.logger.info("GIS Project widget: Checking project external_project_id - #{project&.external_project_id.inspect}")
-        return nil unless project&.external_project_id.present?
+        return {} unless project.respond_to?(:api_data)
         
-        Rails.logger.info("GIS Project widget: Checking API key - #{api_key.present?}")
-        return nil unless api_key.present?
-
-        begin
-          url = "https://natpower-gis-project-dev.azurewebsites.net/erp/project/#{project.external_project_id}"
-          Rails.logger.info("GIS Project widget: Fetching data from #{url}")
+        raw_data = project.api_data
+        return {} unless raw_data.is_a?(Hash) && raw_data.present?
+        
+        # Filter out internal Rails/API fields only
+        exclude_keys = %w[code message]
+        filtered = {}
+        
+        raw_data.each do |key, value|
+          key_str = key.to_s
+          next if key_str.start_with?("_")
+          next if exclude_keys.include?(key_str)
+          next if value.nil?
           
-          response = OpenProject.httpx.with(
-            headers: {
-              "X-Access-Token" => api_key,
-              "Content-Type" => "application/json"
-            }
-          ).get(url)
+          filtered[key] = value
+        end
+        
+        filtered
+      end
 
-          Rails.logger.info("GIS Project widget: API response status - #{response.status}")
-          
-          if response.status == 200
-            data = response.json(symbolize_keys: false)
-            Rails.logger.info("GIS Project widget: Data fetched successfully, present?=#{data.present?}, keys=#{data.keys.inspect if data.is_a?(Hash)}")
-            data
+      # Lazily fetch and cache the status lookup table from the GIS API.
+      # Returns a hash like { 1 => "Active", 2 => "On Hold", ... }
+      def status_lookup
+        return @status_lookup if defined?(@status_lookup)
+
+        @status_lookup = begin
+          gis_service = ::GisAPI::GisApiService.new
+          result = gis_service.get_project_lookup_data
+
+          unless result.respond_to?(:success?) && result.success?
+            Rails.logger.warn("GIS Project Widget: Failed to fetch lookup data for status codes")
+            {}
           else
-            Rails.logger.warn("GIS Project widget: API returned non-200 status: #{response.status}")
-            nil
+
+            raw = result.result
+            data = if raw.is_a?(Hash)
+                     raw["data"] || raw[:data] || raw
+                   else
+                     {}
+                   end
+
+            statuses = (data["status"] || data[:status] || []) rescue []
+
+            statuses.each_with_object({}) do |entry, acc|
+              code = entry["statusCode"] || entry[:statusCode] || entry["status_code"] || entry[:status_code]
+              desc = entry["statusDescription"] || entry[:statusDescription] || entry["status_description"] || entry[:status_description]
+
+              next unless code.present? && desc.present?
+
+              acc[code.to_i] = desc
+            end
           end
         rescue StandardError => e
-          Rails.logger.error("Failed to fetch GIS project data: #{e.message}")
-          Rails.logger.error("Failed to fetch GIS project data - backtrace: #{e.backtrace.first(5).join("\n")}")
-          nil
+          Rails.logger.error("GIS Project Widget: Error while building status lookup: #{e.message}")
+          {}
         end
+      end
+
+      # Return human-readable description for a given status code, if available.
+      #
+      # @param value [Object] Numeric or string status code
+      # @return [String, nil] Description such as "Active" or nil if not found
+      def status_description_for(value)
+        return nil if value.nil?
+
+        code = value.is_a?(String) ? value.to_i : value.to_i
+        status_lookup[code]
       end
 
       def api_key
@@ -110,11 +174,10 @@ module Grids
         return result unless data.is_a?(Hash)
         
         data.each do |key, value|
-          current_key = prefix.present? ? "#{key.to_s.humanize}" : key.to_s.humanize
+          current_key = prefix.present? ? "#{prefix} #{key.to_s.humanize}" : key.to_s.humanize
 
           case value
           when Hash
-
             flatten_gis_data(value, current_key, result)
           when Array
             if value.any? && value.first.is_a?(Hash)

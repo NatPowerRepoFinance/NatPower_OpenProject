@@ -28,8 +28,48 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-module FavoriteHelper
-  # Call the path helper to create a favorite/unfavorite path
-  def build_favorite_path(object, **params)
+class Projects::GisProjectController < ApplicationController
+  before_action :find_project_by_project_id
+  before_action :authorize
+
+  def edit
+    @gis_form = gis_form_defaults
+  end
+
+  def update
+    attrs = permitted_gis_params.to_h.compact
+    attrs["project_id"] = @project.id
+
+    gis_service = ::GisAPI::GisApiService.new
+    result = gis_service.update_project(attrs)
+
+    if result.respond_to?(:success?) && result.success?
+      flash[:notice] = I18n.t(:notice_successful_update)
+      redirect_to project_overview_path(@project)
+    else
+      flash.now[:error] = I18n.t(:notice_unsuccessful_update)
+      @gis_form = gis_form_defaults.merge(attrs)
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  private
+
+  def gis_form_defaults
+    data = @project.respond_to?(:api_data) ? (@project.api_data || {}) : {}
+
+    {
+      "name" => data["name"] || data["projectName"],
+      "status_code" => data["statusCode"] || data["status_code"]
+      # Add more defaults here if you expose more fields
+    }
+  end
+
+  def permitted_gis_params
+    params.require(:gis_project).permit(
+      :name,
+      :status_code
+      # Add other fields you want to send to the GIS update API
+    )
   end
 end
