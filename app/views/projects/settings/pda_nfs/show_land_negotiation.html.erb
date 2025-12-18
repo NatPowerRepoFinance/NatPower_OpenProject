@@ -273,4 +273,49 @@ end %>
   </fieldset>
 </div>
 
+<%# Land Parcels Section %>
+<div class="generic-form" style="margin-top: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Parcels</legend>
+    
+    <%# Display land parcels from API %>
+    <% if @land_parcels_data.present? && @land_parcels_data.any? %>
+      <div class="generic-table--container" style="margin-bottom: 2rem;">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Land Negotiation ID</th>
+                <th>Land Title ID</th>
+                <th>Parcel Total Acre</th>
+                <th>Parcel Used Acre</th>
+                <th>Object ID</th>
+                <th>Technology</th>
+                <th>Is Deleted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @land_parcels_data.each do |parcel| %>
+                <tr>
+                  <td><%= parcel["id"] || parcel[:id] %></td>
+                  <td><%= parcel["landNegotiationId"] || parcel[:landNegotiationId] || parcel["land_negotiation_id"] || parcel[:land_negotiation_id] %></td>
+                  <td><%= h(parcel["landTitleId"] || parcel[:landTitleId] || parcel["land_title_id"] || parcel[:land_title_id]) %></td>
+                  <td><%= number_with_precision(parcel["parcelTotalAcre"] || parcel[:parcelTotalAcre] || parcel["parcel_total_acre"] || parcel[:parcel_total_acre] || 0, precision: 2) %></td>
+                  <td><%= number_with_precision(parcel["parcelUsedAcre"] || parcel[:parcelUsedAcre] || parcel["parcel_used_acre"] || parcel[:parcel_used_acre] || 0, precision: 2) %></td>
+                  <td><%= parcel["objectId"] || parcel[:objectId] || parcel["object_id"] || parcel[:object_id] %></td>
+                  <td><%= h(parcel["technology"] || parcel[:technology]) %></td>
+                  <td><%= parcel["isDeleted"] || parcel[:isDeleted] || parcel["is_deleted"] || parcel[:is_deleted] ? "Yes" : "No" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <p class="form--field-instructions">No land parcels found for this negotiation.</p>
+    <% end %>
+  </fieldset>
+</div>
+
 

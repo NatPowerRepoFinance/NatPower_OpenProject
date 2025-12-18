@@ -1,0 +1,450 @@
+<%
+  # Get project identifier - prefer @project object, fallback to params
+  project_for_routes = @project.present? ? @project : (params[:project_id].present? ? params[:project_id] : nil)
+  project_name = @project.present? && @project.respond_to?(:name) ? @project.name : (params[:project_id].present? ? "Project #{params[:project_id]}" : "Project")
+  
+  # Build PDAs breadcrumb link
+  pdas_link = if project_for_routes.present?
+    if @pda_id.present? && @project.present?
+      by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id)
+    elsif @project.present?
+      project_settings_pda_nfs_path(@project)
+    else
+      project_settings_pda_nfs_path(project_for_routes)
+    end
+  else
+    "#"
+  end
+  
+  breadcrumbs = if project_for_routes.present?
+    [
+      { href: project_overview_path(project_for_routes), text: project_name },
+      { href: project_settings_general_path(project_for_routes), text: I18n.t("label_project_settings") },
+      { href: pdas_link, text: "PDAs" },
+      "Negotiation ##{@negotiation_id}"
+    ]
+  else
+    ["Negotiation ##{@negotiation_id}"]
+  end
+%>
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Negotiation Details" }
+    header.with_breadcrumbs(breadcrumbs)
+  end
+%>
+
+<div class="generic-form">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">
+      Negotiation Details
+      <span class="form--toolbar-item">
+        Negotiation ID: <%= @negotiation_id %>
+      </span>
+    </legend>
+    
+    <%# Land Owners Section %>
+    <% if (@contacts.present? && @contacts.any?) || (@companies.present? && @companies.any?) %>
+      <section class="form--section">
+        <h3 class="form--section-title">Land Owners</h3>
+        
+        <%# Contacts Subsection %>
+        <% if @contacts.present? && @contacts.any? %>
+          <div class="land-owners-subsection">
+            <h4 class="land-owners-subsection-title">Contacts</h4>
+            <div class="generic-table--container">
+              <div class="generic-table--results-container">
+                <table class="generic-table">
+                  <colgroup>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>ID</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Contact ID</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Full Name</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Email</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Phone</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Mobile</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Land Title ID</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Land Negotiation ID</span>
+                          </div>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% @contacts.each do |contact| %>
+                      <tr>
+                        <td><%= contact["id"] if contact["id"].present? %></td>
+                        <td><%= contact["contactId"] if contact["contactId"].present? %></td>
+                        <td><%= h(contact["fullName"]) if contact["fullName"].present? %></td>
+                        <td><%= h(contact["emailWork"]) if contact["emailWork"].present? %></td>
+                        <td><%= h(contact["phone"]) if contact["phone"].present? %></td>
+                        <td><%= h(contact["mobile"]) if contact["mobile"].present? %></td>
+                        <td><%= h(contact["landTitleId"]) if contact["landTitleId"].present? %></td>
+                        <td><%= contact["landNegotiationId"] if contact["landNegotiationId"].present? %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        <% end %>
+        
+        <%# Companies Subsection %>
+        <% if @companies.present? && @companies.any? %>
+          <div class="land-owners-subsection">
+            <h4 class="land-owners-subsection-title">Companies</h4>
+            <div class="generic-table--container">
+              <div class="generic-table--results-container">
+                <table class="generic-table">
+                  <colgroup>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>ID</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Company ID</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Full Name</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Website</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Land Title ID</span>
+                          </div>
+                        </div>
+                      </th>
+                      <th>
+                        <div class="generic-table--sort-header-outer">
+                          <div class="generic-table--sort-header">
+                            <span>Land Negotiation ID</span>
+                          </div>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% @companies.each do |company| %>
+                      <tr>
+                        <td><%= company["id"] if company["id"].present? %></td>
+                        <td><%= company["companyId"] if company["companyId"].present? %></td>
+                        <td><%= h(company["fullName"]) if company["fullName"].present? %></td>
+                        <td><%= h(company["website"]) if company["website"].present? %></td>
+                        <td><%= h(company["landTitleId"]) if company["landTitleId"].present? %></td>
+                        <td><%= company["landNegotiationId"] if company["landNegotiationId"].present? %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </section>
+    <% else %>
+      <p class="form--field-instructions">No land owners data returned from the API for this negotiation.</p>
+    <% end %>
+  </fieldset>
+</div>
+
+<%# Land Titles Section - Collapsible Sections %>
+<% if @land_titles_data.present? && @land_titles_data.any? %>
+  <div class="generic-form">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend">
+        Land Titles & Parcels
+      </legend>
+      
+      <% @land_titles_data.each_with_index do |land_title_item, index| %>
+        <% if land_title_item.is_a?(Hash) && land_title_item["landTitle"].is_a?(Hash) %>
+          <% land_title = land_title_item["landTitle"] %>
+          <% parcels = land_title_item["parcelIds"] || [] %>
+          <% title_id = land_title["landTitleId"] %>
+          
+          <%= render(Primer::OpenProject::CollapsibleSection.new(id: "land-title-#{title_id || index}", display: :block, mb: 3, collapsed: true)) do |section| %>
+            <% section.with_title(tag: :h3) do %>
+              <div class="land-title-header">
+                <span class="land-title-header--primary">
+                  Land Title <%= h(title_id) if title_id.present? %>
+                </span>
+                <% if land_title["negotiationStatus"].present? %>
+                  <%= render(Primer::Beta::Label.new(size: :medium, scheme: :warning)) { h(land_title["negotiationStatus"]) } %>
+                <% end %>
+                <% if parcels.present? && parcels.any? %>
+                  <%= render(Primer::Beta::Label.new(size: :medium, scheme: :secondary)) { pluralize(parcels.length, "parcel") } %>
+                <% else %>
+                  <%= render(Primer::Beta::Label.new(size: :medium, scheme: :secondary)) { "No parcels" } %>
+                <% end %>
+              </div>
+            <% end %>
+            
+            <% section.with_caption do %>
+              <div class="land-title-caption">
+                <% if land_title["usedAcre"].present? && land_title["totalAcres"].present? %>
+                  <span class="land-title-caption--item">
+                    <strong>Acres:</strong> <%= number_with_precision(land_title["usedAcre"], precision: 2) %> / <%= number_with_precision(land_title["totalAcres"], precision: 2) %>
+                  </span>
+                <% end %>
+                <% if land_title["successRating"].present? %>
+                  <span class="land-title-caption--item">
+                    <strong>Success Rating:</strong> <%= h(land_title["successRating"]) %>
+                  </span>
+                <% end %>
+                <% if land_title["estimatedCompletion"].present? %>
+                  <span class="land-title-caption--item">
+                    <strong>Est. Completion:</strong>
+                    <% if land_title["estimatedCompletion"].is_a?(String) && land_title["estimatedCompletion"].match?(/^\d{4}-\d{2}-\d{2}/) %>
+                      <% begin %>
+                        <%= Date.parse(land_title["estimatedCompletion"]).strftime("%B %d, %Y") %>
+                      <% rescue %>
+                        <%= h(land_title["estimatedCompletion"]) %>
+                      <% end %>
+                    <% else %>
+                      <%= h(land_title["estimatedCompletion"]) %>
+                    <% end %>
+                  </span>
+                <% end %>
+                <% if land_title["landNegotiationId"].present? %>
+                  <span class="land-title-caption--item">
+                    <strong>Negotiation ID:</strong> <%= land_title["landNegotiationId"] %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+            
+            <% section.with_collapsible_content do %>
+              <% if parcels.present? && parcels.any? %>
+                <div class="land-parcels-container">
+                  <h4 class="land-parcels-title">Land Parcels</h4>
+                  <div class="generic-table--container">
+                    <div class="generic-table--results-container">
+                      <table class="generic-table land-parcels-table">
+                        <colgroup>
+                          <col>
+                          <col>
+                          <col>
+                          <col>
+                          <col>
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th>
+                              <div class="generic-table--sort-header-outer">
+                                <div class="generic-table--sort-header">
+                                  <span>Parcel ID</span>
+                                </div>
+                              </div>
+                            </th>
+                            <th>
+                              <div class="generic-table--sort-header-outer">
+                                <div class="generic-table--sort-header">
+                                  <span>Object ID</span>
+                                </div>
+                              </div>
+                            </th>
+                            <th>
+                              <div class="generic-table--sort-header-outer">
+                                <div class="generic-table--sort-header">
+                                  <span>Used Acre</span>
+                                </div>
+                              </div>
+                            </th>
+                            <th>
+                              <div class="generic-table--sort-header-outer">
+                                <div class="generic-table--sort-header">
+                                  <span>Total Acre</span>
+                                </div>
+                              </div>
+                            </th>
+                            <th>
+                              <div class="generic-table--sort-header-outer">
+                                <div class="generic-table--sort-header">
+                                  <span>Technology</span>
+                                </div>
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% parcels.each do |parcel| %>
+                            <% if parcel.is_a?(Hash) %>
+                              <tr class="land-parcel-row">
+                                <td><%= parcel["id"] if parcel["id"].present? %></td>
+                                <td><%= parcel["objectid"] if parcel["objectid"].present? %></td>
+                                <td>
+                                  <% if parcel["used_acre"].present? %>
+                                    <%= number_with_precision(parcel["used_acre"], precision: 2, delimiter: ',') %>
+                                  <% else %>
+                                    <span class="form--field-instructions">-</span>
+                                  <% end %>
+                                </td>
+                                <td>
+                                  <% if parcel["total_acre"].present? %>
+                                    <%= number_with_precision(parcel["total_acre"], precision: 2, delimiter: ',') %>
+                                  <% else %>
+                                    <span class="form--field-instructions">-</span>
+                                  <% end %>
+                                </td>
+                                <td><%= h(parcel["technology"]) if parcel["technology"].present? %></td>
+                              </tr>
+                            <% end %>
+                          <% end %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              <% else %>
+                <p class="form--field-instructions">No parcels associated with this land title.</p>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      <% end %>
+    </fieldset>
+  </div>
+<% end %>
+
+<%# Land Parcels Section (Flat Array from API) %>
+<% if @land_parcels_data.present? && @land_parcels_data.any? %>
+  <div class="generic-form">
+    <fieldset class="form--fieldset">
+      <legend class="form--fieldset-legend">Land Parcels</legend>
+      
+      <div class="generic-table--container">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Land Negotiation ID</th>
+                <th>Land Title ID</th>
+                <th>Parcel Total Acre</th>
+                <th>Parcel Used Acre</th>
+                <th>Object ID</th>
+                <th>Technology</th>
+                <th>Is Deleted</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @land_parcels_data.each do |parcel| %>
+                <tr>
+                  <td><%= parcel["id"] || parcel[:id] %></td>
+                  <td><%= parcel["landNegotiationId"] || parcel[:landNegotiationId] || parcel["land_negotiation_id"] || parcel[:land_negotiation_id] %></td>
+                  <td><%= h(parcel["landTitleId"] || parcel[:landTitleId] || parcel["land_title_id"] || parcel[:land_title_id]) %></td>
+                  <td><%= number_with_precision(parcel["parcelTotalAcre"] || parcel[:parcelTotalAcre] || parcel["parcel_total_acre"] || parcel[:parcel_total_acre] || 0, precision: 2) %></td>
+                  <td><%= number_with_precision(parcel["parcelUsedAcre"] || parcel[:parcelUsedAcre] || parcel["parcel_used_acre"] || parcel[:parcel_used_acre] || 0, precision: 2) %></td>
+                  <td><%= parcel["objectId"] || parcel[:objectId] || parcel["object_id"] || parcel[:object_id] %></td>
+                  <td><%= h(parcel["technology"] || parcel[:technology] || "-") %></td>
+                  <td><%= (parcel["isDeleted"] || parcel[:isDeleted] || parcel["is_deleted"] || parcel[:is_deleted]) ? "Yes" : "No" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </fieldset>
+  </div>
+<% end %>
+
+<div class="form--field">
+  <% 
+    project_for_routes = @project.present? ? @project : (params[:project_id].present? ? params[:project_id] : nil)
+    back_path = if project_for_routes.present?
+                   if @pda_id.present? && @project.present?
+                     by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id)
+                   elsif @project.present?
+                     project_settings_pda_nfs_path(@project)
+                   else
+                     project_settings_pda_nfs_path(project_for_routes)
+                   end
+                 else
+                   projects_path
+                 end
+  %>
+  <%= link_to t(:button_back), back_path, class: "button" %>
+</div>
+

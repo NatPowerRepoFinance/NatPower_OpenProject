@@ -389,3 +389,95 @@ thead.-sticky th
   &--action-menu-button.leading-visual-icon-header
     position: relative
     top: 2px
+
+// Child row styles for nested tables (e.g., parcels within land titles)
+.parcel-child-row
+  background-color: var(--bgColor-neutral-muted)
+
+.parcel-child-cell
+  padding: 0
+  border-top: none
+
+  .generic-table--container,
+  .generic-table--results-container
+    margin: 0
+    padding: 0
+
+  .generic-table
+    margin: 0
+    width: 100%
+
+// Land Title and Parcel distinction styles
+.land-title-header
+  display: flex
+  align-items: center
+  gap: var(--base-size-8, 8px)
+  flex-wrap: wrap
+
+  &--primary
+    font-weight: var(--base-text-weight-semibold)
+    font-size: var(--base-size-16, 16px)
+    color: var(--body-font-color)
+
+.land-title-caption
+  display: flex
+  flex-wrap: wrap
+  gap: var(--base-size-16, 16px)
+  margin-top: var(--base-size-4, 4px)
+
+  &--item
+    font-size: var(--base-size-14, 14px)
+    color: var(--fgColor-muted)
+
+    strong
+      font-weight: var(--base-text-weight-semibold)
+      color: var(--body-font-color)
+      margin-right: var(--base-size-4, 4px)
+
+.land-parcels-container
+  margin-top: var(--base-size-16, 16px)
+  padding-top: var(--base-size-16, 16px)
+  border-top: 1px solid var(--borderColor-default)
+
+.land-parcels-title
+  font-size: var(--base-size-14, 14px)
+  font-weight: var(--base-text-weight-semibold)
+  color: var(--body-font-color)
+  margin-bottom: var(--base-size-12, 12px)
+  text-transform: uppercase
+  letter-spacing: 0.5px
+
+.land-parcels-table
+  border: 1px solid var(--borderColor-default)
+  border-radius: var(--borderRadius-medium, 6px)
+  overflow: hidden
+
+  thead
+    background-color: var(--bgColor-neutral-muted)
+
+  tbody
+    background-color: var(--body-background)
+
+.land-parcel-row
+  border-bottom: 1px solid var(--borderColor-default)
+
+  &:last-child
+    border-bottom: none
+
+  &:hover
+    background-color: var(--bgColor-muted)
+
+// Land Owners subsection styles
+.land-owners-subsection
+  margin-top: var(--base-size-16, 16px)
+
+  &:first-child
+    margin-top: 0
+
+.land-owners-subsection-title
+  font-size: var(--base-size-14, 14px)
+  font-weight: var(--base-text-weight-semibold)
+  color: var(--body-font-color)
+  margin-bottom: var(--base-size-12, 12px)
+  text-transform: uppercase
+  letter-spacing: 0.5px
