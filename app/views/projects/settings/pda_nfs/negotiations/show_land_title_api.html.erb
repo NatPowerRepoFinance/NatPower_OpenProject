@@ -251,6 +251,150 @@
   </div>
 <% end %>
 
+<%# Contracts Section %>
+<div class="generic-form" style="margin-top: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Contracts</legend>
+    
+    <% if @contracts_data.present? && @contracts_data.any? %>
+      <div class="generic-table--container">
+        <div class="generic-table--results-container">
+          <table class="generic-table">
+            <colgroup>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+              <col>
+            </colgroup>
+            <thead>
+              <tr>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>ID</span>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>Contract ID</span>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>Contract Type ID</span>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>Start Date</span>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>Completion Date</span>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>Status</span>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>Contract Description</span>
+                    </div>
+                  </div>
+                </th>
+                <th>
+                  <div class="generic-table--sort-header-outer">
+                    <div class="generic-table--sort-header">
+                      <span>Land Negotiation ID</span>
+                    </div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @contracts_data.each do |contract| %>
+                <% if contract.is_a?(Hash) %>
+                  <tr class="land-owner-row">
+                    <td><%= contract["id"] || contract[:id] if contract["id"].present? || contract[:id].present? %></td>
+                    <td><%= contract["contractId"] || contract[:contractId] || contract["contract_id"] || contract[:contract_id] if contract["contractId"].present? || contract[:contractId].present? || contract["contract_id"].present? || contract[:contract_id].present? %></td>
+                    <td><%= contract["contractTypeId"] || contract[:contractTypeId] || contract["contract_type_id"] || contract[:contract_type_id] if contract["contractTypeId"].present? || contract[:contractTypeId].present? || contract["contract_type_id"].present? || contract[:contract_type_id].present? %></td>
+                    <td>
+                      <% if contract["startDate"].present? || contract[:startDate].present? || contract["start_date"].present? || contract[:start_date].present? %>
+                        <% start_date = contract["startDate"] || contract[:startDate] || contract["start_date"] || contract[:start_date] %>
+                        <% if start_date.is_a?(String) && start_date.match?(/^\d{4}-\d{2}-\d{2}/) %>
+                          <% begin %>
+                            <%= Date.parse(start_date).strftime("%B %d, %Y") %>
+                          <% rescue %>
+                            <%= h(start_date) %>
+                          <% end %>
+                        <% else %>
+                          <%= h(start_date) %>
+                        <% end %>
+                      <% else %>
+                        <span class="form--field-instructions">-</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if contract["completionDate"].present? || contract[:completionDate].present? || contract["completion_date"].present? || contract[:completion_date].present? %>
+                        <% completion_date = contract["completionDate"] || contract[:completionDate] || contract["completion_date"] || contract[:completion_date] %>
+                        <% if completion_date.is_a?(String) && completion_date.match?(/^\d{4}-\d{2}-\d{2}/) %>
+                          <% begin %>
+                            <%= Date.parse(completion_date).strftime("%B %d, %Y") %>
+                          <% rescue %>
+                            <%= h(completion_date) %>
+                          <% end %>
+                        <% else %>
+                          <%= h(completion_date) %>
+                        <% end %>
+                      <% else %>
+                        <span class="form--field-instructions">-</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if contract["status"].present? || contract[:status].present? %>
+                        <% status_value = contract["status"] || contract[:status] %>
+                        <% status_label = contract_status_label(status_value) %>
+                        <% if status_label.present? %>
+                          <%= render(Primer::Beta::Label.new(size: :medium, scheme: contract_status_badge_scheme(status_value))) { h(status_label) } %>
+                        <% else %>
+                          <%= h(status_value) %>
+                        <% end %>
+                      <% end %>
+                    </td>
+                    <td><%= h(contract["contractDescription"] || contract[:contractDescription] || contract["contract_description"] || contract[:contract_description]) if contract["contractDescription"].present? || contract[:contractDescription].present? || contract["contract_description"].present? || contract[:contract_description].present? %></td>
+                    <td><%= contract["landNegotiationId"] || contract[:landNegotiationId] || contract["land_negotiation_id"] || contract[:land_negotiation_id] if contract["landNegotiationId"].present? || contract[:landNegotiationId].present? || contract["land_negotiation_id"].present? || contract[:land_negotiation_id].present? %></td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% else %>
+      <p class="form--field-instructions">No contracts found.</p>
+    <% end %>
+  </fieldset>
+</div>
+
 <div class="form--field" style="margin-top: 1.5rem; padding: 0 1rem;">
   <%= link_to t(:button_back), 
               (@pda_id.present? ? negotiation_project_settings_pda_nf_path(@project, @pda_id, negotiation_id: @negotiation_id) : project_settings_pda_nfs_path(@project)),

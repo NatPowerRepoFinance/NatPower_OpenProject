@@ -140,6 +140,25 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
       end
     end
 
+    # Fetch contracts for this negotiation
+    @contracts_data = []
+    contracts_result = gis_service.get_contracts(negotiation_id)
+    if contracts_result.respond_to?(:success?) && contracts_result.success?
+      contracts_data = contracts_result.result
+      # Handle API response format: { "code": 200, "message": null, "data": [...] }
+      @contracts_data = if contracts_data.is_a?(Hash) && contracts_data["data"].is_a?(Array)
+                         contracts_data["data"]
+                       elsif contracts_data.is_a?(Array)
+                         contracts_data
+                       elsif contracts_data.is_a?(Hash) && contracts_data["contracts"].is_a?(Array)
+                         contracts_data["contracts"]
+                       elsif contracts_data.is_a?(Hash)
+                         [contracts_data]
+                       else
+                         []
+                       end
+    end
+
     # Store negotiation ID for display
     @negotiation_id = negotiation_id
 
@@ -148,25 +167,14 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
 
   # Show land title details from API (API-only)
   def show_land_title_api
-    # Ensure @project is set
-    unless @project.present?
-      project_id = params[:project_id]
-      if project_id.present?
-        @project = Project.find_by(id: project_id.to_i) || Project.find(project_id)
-      else
-        flash[:error] = "Project ID is required"
-        redirect_to projects_path
-        return
-      end
-    end
-    
     negotiation_id = params[:negotiation_id]
     title_no = params[:title_no]
     @pda_id = params[:pda_id] || params[:id]
+    @project_id = params[:project_id]
 
     unless negotiation_id.present? && title_no.present?
       flash[:error] = "Negotiation ID and Title Number are required"
-      redirect_to project_settings_pda_nfs_path(@project)
+      redirect_to (@project_id.present? ? project_settings_pda_nfs_path(@project_id) : projects_path)
       return
     end
 
@@ -176,7 +184,7 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
 
     unless result.respond_to?(:success?) && result.success?
       flash[:error] = "Failed to fetch land title data for negotiation #{negotiation_id} and title #{title_no}"
-      redirect_to (@pda_id.present? ? by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id) : project_settings_pda_nfs_path(@project))
+      redirect_to (@project_id.present? && @pda_id.present? ? by_pda_id_project_settings_pda_nfs_path(@project_id, pda_id: @pda_id) : (@project_id.present? ? project_settings_pda_nfs_path(@project_id) : projects_path))
       return
     end
 
@@ -218,6 +226,25 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
           parcel_title_id.to_s == title_no.to_s
         end
       end
+    end
+
+    # Fetch contracts for this negotiation
+    @contracts_data = []
+    contracts_result = gis_service.get_contracts(negotiation_id)
+    if contracts_result.respond_to?(:success?) && contracts_result.success?
+      contracts_data = contracts_result.result
+      # Handle API response format: { "code": 200, "message": null, "data": [...] }
+      @contracts_data = if contracts_data.is_a?(Hash) && contracts_data["data"].is_a?(Array)
+                         contracts_data["data"]
+                       elsif contracts_data.is_a?(Array)
+                         contracts_data
+                       elsif contracts_data.is_a?(Hash) && contracts_data["contracts"].is_a?(Array)
+                         contracts_data["contracts"]
+                       elsif contracts_data.is_a?(Hash)
+                         [contracts_data]
+                       else
+                         []
+                       end
     end
 
     # Store IDs for display

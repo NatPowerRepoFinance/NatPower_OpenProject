@@ -45,7 +45,9 @@ module API
 
         # Override to_param to use id instead of identifier for routes
         def to_param
-          id.to_s
+          id_value = id
+          return nil if id_value.nil?
+          id_value.to_s
         end
 
         # Return true to indicate this is a persisted project (for menu rendering)
@@ -69,6 +71,17 @@ module API
           # Prioritize project_id (used in routes) over id (internal API id)
           id_value = data["project_id"] || data[:project_id] || data["projectId"] || data[:projectId] || 
                      data["id"] || data[:id]
+          
+          # Handle case where data might be wrapped in another "data" key (nested structure)
+          if id_value.nil? && data.key?("data") && data["data"].is_a?(Hash)
+            nested_data = data["data"]
+            id_value = nested_data["project_id"] || nested_data[:project_id] || nested_data["projectId"] || nested_data[:projectId] || 
+                       nested_data["id"] || nested_data[:id]
+          elsif id_value.nil? && data.key?(:data) && data[:data].is_a?(Hash)
+            nested_data = data[:data]
+            id_value = nested_data["project_id"] || nested_data[:project_id] || nested_data["projectId"] || nested_data[:projectId] || 
+                       nested_data["id"] || nested_data[:id]
+          end
           
           # Log warning if id is still nil (but don't raise error)
           if id_value.nil?
@@ -409,23 +422,61 @@ module API
             if is_wrapper && (response_data.key?("data") || response_data.key?(:data))
               extracted = response_data["data"] || response_data[:data]
               # Handle array case: if data is an array, extract the first element
-              if extracted.is_a?(Array) && extracted.first.is_a?(Hash)
-                extracted.first
+              if extracted.is_a?(Array)
+                if extracted.first.is_a?(Hash)
+                  clean_project_data(extracted.first)
+                elsif extracted.empty?
+                  # Empty array - return empty hash to indicate no data
+                  Rails.logger.warn("ExternalApiProjectAdapter: Empty data array in response")
+                  {}
+                else
+                  # Array with non-hash elements - return original response
+                  response_data
+                end
               elsif extracted.is_a?(Hash)
-                extracted
+                clean_project_data(extracted)
               else
-                response_data
+                # extracted is nil or other type - return empty hash
+                Rails.logger.warn("ExternalApiProjectAdapter: Invalid data type in response: #{extracted.class}")
+                {}
               end
             else
-              # Not a wrapper, use as-is
-              response_data
+              # Not a wrapper, use as-is but clean it
+              clean_project_data(response_data)
             end
           elsif response_data.is_a?(Array) && response_data.first.is_a?(Hash)
             # If response is an array of hashes, use the first one (shouldn't happen in normal flow)
-            response_data.first
+            clean_project_data(response_data.first)
           else
             response_data
           end
+        end
+
+        # Clean project data by filtering out null values in arrays and handling empty/null features/cluster
+        def clean_project_data(data)
+          return data unless data.is_a?(Hash)
+          
+          cleaned = data.dup
+          
+          # Handle subFolderName.features array - filter out null values
+          if cleaned["subFolderName"].is_a?(Hash) && cleaned["subFolderName"]["features"].is_a?(Array)
+            cleaned["subFolderName"] = cleaned["subFolderName"].dup
+            cleaned["subFolderName"]["features"] = cleaned["subFolderName"]["features"].compact
+            # If features array is empty after filtering, set to empty array
+            cleaned["subFolderName"]["features"] = [] if cleaned["subFolderName"]["features"].empty?
+          elsif cleaned[:subFolderName].is_a?(Hash) && cleaned[:subFolderName][:features].is_a?(Array)
+            cleaned[:subFolderName] = cleaned[:subFolderName].dup
+            cleaned[:subFolderName][:features] = cleaned[:subFolderName][:features].compact
+            cleaned[:subFolderName][:features] = [] if cleaned[:subFolderName][:features].empty?
+          end
+          
+          # Handle null cluster - keep as null (this is valid)
+          # cluster can be null, so we don't need to change it
+          
+          # Handle null clusterIAList - keep as null (this is valid)
+          # clusterIAList can be null, so we don't need to change it
+          
+          cleaned
         end
 
         def fetch_details_if_needed

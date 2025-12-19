@@ -109,6 +109,21 @@ module GisAPI
       make_request(:get, endpoint)
     end
 
+    # Fetch contracts by negotiation ID from the GIS API
+    # @param negotiation_id [String, Integer] The ID of the negotiation
+    # @return [ServiceResult] ServiceResult with contracts data
+    def get_contracts(negotiation_id)
+      endpoint = "/erp/contract/#{negotiation_id}"
+      make_request(:get, endpoint)
+    end
+
+    # Fetch contract status lookup data from the GIS API
+    # @return [ServiceResult] ServiceResult with contract status lookup data
+    def get_contract_status_lookup
+      endpoint = "/erp/negotiation/contract/status"
+      make_request(:get, endpoint)
+    end
+
     # Fetch land parcels by negotiation ID from the GIS API
     # @param negotiation_id [String, Integer] The ID of the negotiation
     # @param title_no [String, Integer, nil] Optional title number to filter by specific title

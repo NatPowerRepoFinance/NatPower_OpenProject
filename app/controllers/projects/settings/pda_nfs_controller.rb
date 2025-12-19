@@ -35,6 +35,8 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
 
   menu_item :settings_pda_nfs
 
+  helper_method :contract_status_label, :contract_status_badge_scheme
+
   skip_before_action :authorize,
                      only: %i[
                        index
@@ -62,6 +64,30 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
     
       @land_contracts = @land_negotiation.land_contracts_nfs.order(:id)
       @pda_links = @land_negotiation.land_negotiation_pda_link_nfs.includes(:pda_nf).order(:id)
+      
+      # Fetch contracts from API
+      @contracts_data = []
+      negotiation_id = @land_negotiation.land_negotiation_id || @land_negotiation.id
+      if negotiation_id.present?
+        gis_service = ::GisAPI::GisApiService.new
+        contracts_result = gis_service.get_contracts(negotiation_id.to_s)
+        if contracts_result.respond_to?(:success?) && contracts_result.success?
+          contracts_data = contracts_result.result
+          # Handle API response format: { "code": 200, "message": null, "data": [...] }
+          @contracts_data = if contracts_data.is_a?(Hash) && contracts_data["data"].is_a?(Array)
+                             contracts_data["data"]
+                           elsif contracts_data.is_a?(Array)
+                             contracts_data
+                           elsif contracts_data.is_a?(Hash) && contracts_data["contracts"].is_a?(Array)
+                             contracts_data["contracts"]
+                           elsif contracts_data.is_a?(Hash)
+                             [contracts_data]
+                           else
+                             []
+                           end
+        end
+      end
+      
       render :show_land_negotiation
     elsif params[:id].present?
       # Regular route: pda_nfs/:id (PDA show)
@@ -240,6 +266,90 @@ class Projects::Settings::PdaNfsController < Projects::SettingsController
 
 
   private
+
+  def contract_status_lookup
+    @contract_status_lookup ||= begin
+      gis_service = ::GisAPI::GisApiService.new
+      result = gis_service.get_contract_status_lookup
+
+      unless result.respond_to?(:success?) && result.success?
+        Rails.logger.warn("Failed to fetch contract status lookup data")
+        {}
+      else
+        raw = result.result
+        Rails.logger.info("Contract status lookup raw response: #{raw.inspect}")
+        
+        # Extract data array from response
+        # API response format: { "code": 200, "message": null, "data": [...] }
+        statuses = if raw.is_a?(Hash) && raw["data"].is_a?(Array)
+                     raw["data"]
+                   elsif raw.is_a?(Hash) && raw[:data].is_a?(Array)
+                     raw[:data]
+                   elsif raw.is_a?(Array)
+                     raw
+                   else
+                     []
+                   end
+
+        Rails.logger.info("Contract status lookup parsed statuses count: #{statuses.length}")
+
+        statuses.each_with_object({}) do |entry, acc|
+          # API response format: { "contractStatus": "Not Started", "id": 1 }
+          # Map id (code) -> contractStatus (description)
+          code = entry["id"] || entry[:id]
+          desc = entry["contractStatus"] || entry[:contractStatus] || 
+                 entry["contract_status"] || entry[:contract_status]
+
+          if code.present? && desc.present?
+            acc[code.to_i] = desc.to_s
+            Rails.logger.debug("Contract status mapping: #{code} => #{desc}")
+          end
+        end
+      end
+    rescue StandardError => e
+      Rails.logger.error("Error while building contract status lookup: #{e.message}")
+      Rails.logger.error("Contract status lookup backtrace: #{e.backtrace.first(5).join("\n")}")
+      {}
+    end
+  end
+
+  def contract_status_label(status_value)
+    return nil if status_value.nil?
+    
+    code = status_value.is_a?(String) ? status_value.to_i : status_value.to_i
+    label = contract_status_lookup[code]
+    
+    if label.present?
+      label
+    else
+      Rails.logger.warn("Contract status lookup: No label found for code #{code}. Available codes: #{contract_status_lookup.keys.inspect}")
+      status_value.to_s
+    end
+  end
+
+  def contract_status_badge_scheme(status_value)
+    return :secondary if status_value.nil?
+    
+    label = contract_status_label(status_value)
+    return :secondary unless label.present?
+    
+    # Map status labels to badge schemes
+    # Valid schemes: [:default, :primary, :secondary, :accent, :success, :attention, :danger, :severe, :done, :sponsors]
+    case label.to_s.downcase
+    when "signed", "actioned"
+      :success
+    when "draft", "not started"
+      :secondary
+    when "part signed"
+      :attention
+    when "expired", "cancelled"
+      :danger
+    when "archive"
+      :secondary
+    else
+      :secondary
+    end
+  end
 
   def fetch_pda_api_data(pda_id)
     return nil unless pda_id.present?
