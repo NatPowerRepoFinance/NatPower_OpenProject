@@ -190,18 +190,36 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
 
     @land_title_data = result.result
     
-    # Extract contacts and companies if present in the response
+    # Fetch landowners (contacts and companies) from API
+    # Landowners are the actual land owners for this negotiation
     @contacts = []
     @companies = []
     
-    if @land_title_data.is_a?(Hash)
+    landowners_result = gis_service.get_landowners(negotiation_id)
+    if landowners_result.respond_to?(:success?) && landowners_result.success?
+      landowners_data = landowners_result.result
+      
+      if landowners_data.is_a?(Hash)
+        if landowners_data["data"].is_a?(Hash)
+          @contacts = landowners_data["data"]["contact"] || []
+          @companies = landowners_data["data"]["company"] || []
+        elsif landowners_data["contact"].is_a?(Array)
+          @contacts = landowners_data["contact"]
+        elsif landowners_data["company"].is_a?(Array)
+          @companies = landowners_data["company"]
+        end
+      end
+    end
+    
+    # Also try to extract from land_title_data if not found in landowners
+    if @contacts.empty? && @companies.empty? && @land_title_data.is_a?(Hash)
       if @land_title_data["data"].is_a?(Hash)
-        @contacts = @land_title_data["data"]["contact"] || []
-        @companies = @land_title_data["data"]["company"] || []
+        @contacts = @land_title_data["data"]["contact"] || [] if @contacts.empty?
+        @companies = @land_title_data["data"]["company"] || [] if @companies.empty?
       elsif @land_title_data["contact"].is_a?(Array)
-        @contacts = @land_title_data["contact"]
+        @contacts = @land_title_data["contact"] if @contacts.empty?
       elsif @land_title_data["company"].is_a?(Array)
-        @companies = @land_title_data["company"]
+        @companies = @land_title_data["company"] if @companies.empty?
       end
     end
 

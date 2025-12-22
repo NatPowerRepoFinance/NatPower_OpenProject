@@ -20,10 +20,15 @@
       </span>
     </legend>
     
-    <%# Contacts Section %>
-    <% if @contacts.present? && @contacts.any? %>
-      <div style="margin-bottom: 2rem;">
-        <h3 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">Contacts</h3>
+    <%# Land Owners Section %>
+    <% if (@contacts.present? && @contacts.any?) || (@companies.present? && @companies.any?) %>
+      <section class="form--section">
+        <h3 class="form--section-title">Land Owners</h3>
+        
+        <%# Contacts Subsection %>
+        <% if @contacts.present? && @contacts.any? %>
+          <div class="land-owners-subsection">
+            <h4 class="land-owners-subsection-title">Contacts</h4>
         <div class="generic-table--container">
           <div class="generic-table--results-container">
             <table class="generic-table">
@@ -114,13 +119,13 @@
             </table>
           </div>
         </div>
-      </div>
-    <% end %>
-    
-    <%# Companies Section %>
-    <% if @companies.present? && @companies.any? %>
-      <div style="margin-bottom: 2rem;">
-        <h3 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">Companies</h3>
+          </div>
+        <% end %>
+        
+        <%# Companies Subsection %>
+        <% if @companies.present? && @companies.any? %>
+          <div class="land-owners-subsection">
+            <h4 class="land-owners-subsection-title">Companies</h4>
         <div class="generic-table--container">
           <div class="generic-table--results-container">
             <table class="generic-table">
@@ -193,11 +198,11 @@
             </table>
           </div>
         </div>
-      </div>
-    <% end %>
-    
-    <% if (@contacts.blank? || @contacts.empty?) && (@companies.blank? || @companies.empty?) %>
-      <p class="form--field-instructions">No contacts or companies data returned from the API for this land title.</p>
+          </div>
+        <% end %>
+      </section>
+    <% else %>
+      <p class="form--field-instructions">No land owners data returned from the API for this land title.</p>
     <% end %>
   </fieldset>
 </div>

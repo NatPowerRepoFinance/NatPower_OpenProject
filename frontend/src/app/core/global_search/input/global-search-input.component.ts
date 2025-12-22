@@ -148,11 +148,13 @@ export class GlobalSearchInputComponent implements AfterViewInit, OnDestroy {
   }
 
   public set searchTerm(searchTerm:string) {
-    this.ngSelectComponent.ngSelectInstance.searchTerm = searchTerm;
+    if (this.ngSelectComponent?.typeahead) {
+      this.ngSelectComponent.typeahead.next(searchTerm);
+    }
   }
 
   public get searchTerm():string {
-    return this.ngSelectComponent.ngSelectInstance.searchTerm;
+    return this.ngSelectComponent?.ngSelectInstance?.searchTerm || '';
   }
 
   public set markable(value:boolean) {
