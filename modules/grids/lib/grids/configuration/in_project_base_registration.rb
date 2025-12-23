@@ -12,7 +12,8 @@ module Grids::Configuration
             "members",
             "news",
             "documents",
-            "custom_text"
+            "custom_text",
+            "gis_project_gantt"
 
     remove_query_lambda = -> {
       ::Query.find_by(id: options[:queryId])&.destroy
@@ -61,6 +62,16 @@ module Grids::Configuration
 
     widget_strategy "work_packages_calendar" do
       allowed view_work_packages_lambda
+    end
+
+    # Register gis_project_gantt to use the work_packages_table widget strategy
+    # This allows it to reuse the existing Gantt chart infrastructure
+    widget_strategy "gis_project_gantt" do
+      after_destroy remove_query_lambda
+
+      allowed save_or_manage_queries_lambda
+
+      options_representer "::API::V3::Grids::Widgets::QueryOptionsRepresenter"
     end
 
     widget_strategy "members" do

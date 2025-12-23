@@ -331,12 +331,37 @@ module Redmine::MenuManager::MenuHelper
     when NilClass
       "#"
     when Hash
-      engine.url_for(project.nil? ? node.url(project) : { node.param => project }.merge(node.url(project)))
+      project_param = project.nil? ? nil : extract_project_id_for_routes(project)
+      engine.url_for(project_param.nil? ? node.url(project) : { node.param => project_param }.merge(node.url(project)))
     when Symbol
       engine.send(node.url(project))
     else
       engine.url_for(node.url(project))
     end
+  end
+
+  def extract_project_id_for_routes(project)
+    return nil unless project.present?
+    
+    # Handle ExternalApiProjectAdapter
+    if project.is_a?(::API::V3::Projects::ExternalApiProjectAdapter)
+      project_id = project.id
+      return project_id.to_s if project_id.present?
+      return nil
+    end
+    
+    # Handle regular Project models
+    if project.respond_to?(:to_param)
+      project_id = project.to_param
+      return project_id.to_s if project_id.present?
+    end
+    
+    if project.respond_to?(:id)
+      project_id = project.id
+      return project_id.to_s if project_id.present?
+    end
+    
+    nil
   end
 
   def menu_items_for(iteratable, menu, project = nil)

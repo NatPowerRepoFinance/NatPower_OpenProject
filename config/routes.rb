@@ -303,42 +303,33 @@ Rails.application.routes.draw do
         resource :versions, only: %i[show]
         resource :storage, only: %i[show], controller: "storage"
         resources :pda_nfs, only: %i[index show new create edit update destroy] do
-          resources :negotiations, only: %i[show new create edit update destroy], controller: "pda_nfs" do
-            resources :contracts, only: %i[new create], controller: "pda_nfs/contracts"
-
-            member do
-              get :new_land_contract
-              post :create_land_contract
-              get :show_land_contract
-              get :edit_land_contract
-              patch :update_land_contract
-              delete :destroy_land_contract
-              
-              get :new_pda_link
-              post :create_pda_link
-              get :show_pda_link
-              get :edit_pda_link
-              patch :update_pda_link
-              delete :destroy_pda_link
-
-            end
+          collection do
+            get "by_pda_id/:pda_id", action: :show_by_pda_id, as: :by_pda_id
           end
           
+          # API-based negotiations routes
           member do
-            get :negotiation_contracts
-            get :new_land_parcel
-            post :create_land_parcel
-            get :show_land_parcel
-            get :edit_land_parcel
-            patch :update_land_parcel
-            delete :destroy_land_parcel
+            get "negotiation/:negotiation_id", controller: "pda_nfs/negotiations", action: :show_negotiation, as: :negotiation
+            get "negotiation/:negotiation_id/land_title/:title_no", controller: "pda_nfs/negotiations", action: :show_land_title_api, as: :land_title_api
+            get "negotiation/:negotiation_id/contracts", controller: "pda_nfs/negotiations", action: :negotiation_contracts, as: :negotiation_contracts
+          end
+          
+          # DB-based negotiations routes
+          resources :negotiations, only: %i[show new create edit update destroy], controller: "pda_nfs" do
+            # API-based contracts (for creating via API)
+            resources :contracts, only: %i[new create], controller: "pda_nfs/contracts"
             
-            get :new_land_title
-            post :create_land_title
-            get :show_land_title
-            get :edit_land_title
-            patch :update_land_title
-            delete :destroy_land_title
+            # DB-based contracts
+            resources :land_contracts, only: %i[new create show edit update destroy], controller: "pda_nfs/land_contracts"
+            
+            # PDA links
+            resources :pda_links, only: %i[new create show edit update destroy], controller: "pda_nfs/pda_links"
+          end
+          
+          # Land parcels routes (nested under pda_nf)
+          resources :land_parcels, only: %i[new create show edit update destroy], controller: "pda_nfs/land_parcels" do
+            # Land titles nested under land parcels
+            resources :land_titles, only: %i[new create show edit update destroy], controller: "pda_nfs/land_titles"
           end
         end
         get :types, to: redirect("projects/%{project_id}/settings/work_packages/types")

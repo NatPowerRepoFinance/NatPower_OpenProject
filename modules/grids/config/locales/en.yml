@@ -21,6 +21,9 @@ en:
         title: "GIS Project"
         no_data: "No GIS project data available."
         no_api_key: "GIS API key not configured."
+      gis_project_gantt:
+        title: "Project Key Dates Timeline"
+        no_dates: "No key dates available."
       pdas:
         title: "PDAs"
         no_pdas: "No PDAs added yet."

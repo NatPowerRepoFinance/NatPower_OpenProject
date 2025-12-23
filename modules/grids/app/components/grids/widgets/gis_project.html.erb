@@ -16,7 +16,7 @@
 
                   formatted =
                     if value.is_a?(TrueClass) || value.is_a?(FalseClass)
-                      render(Primer::Alpha::ToggleSwitch.new(checked: value, enabled: false, size: :small))
+                      render(Primer::Alpha::CheckBox.new(name: "gis_#{label.to_s.parameterize}", checked: value, disabled: true, label: "", visually_hide_label: true))
                     else
                       format_value_for_display(map_lookup_value(label, value))
                     end
