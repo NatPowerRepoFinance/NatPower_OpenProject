@@ -29,7 +29,246 @@
 #++
 
 class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::PdaNfsController
-  skip_before_action :authorize, only: %i[show_negotiation show_land_title_api negotiation_contracts]
+  skip_before_action :authorize, only: %i[show_negotiation show_land_title_api negotiation_contracts new create edit update]
+
+  def new
+    pda_id = params[:pda_id]
+    
+    unless pda_id.present?
+      flash[:error] = "PDA ID is required"
+      redirect_to project_settings_pda_nfs_path(@project)
+      return
+    end
+    
+    @pda_id = pda_id
+    @negotiation_form = Projects::Settings::LandNegotiationFormObject.new(pda_id: pda_id)
+  end
+
+  def create
+    pda_id = params[:pda_id]
+    
+    unless pda_id.present?
+      flash[:error] = "PDA ID is required"
+      redirect_to project_settings_pda_nfs_path(@project)
+      return
+    end
+    
+    params_hash = land_negotiation_params.to_h
+    
+    # Use pda_id from route if not provided in params
+    params_hash[:pda_id] = pda_id unless params_hash[:pda_id].present?
+    
+    @pda_id = pda_id
+    @negotiation_form = Projects::Settings::LandNegotiationFormObject.new(params_hash)
+    
+    unless current_user.present?
+      flash.now[:error] = "You must be logged in to create a land negotiation."
+      render :new, status: :unprocessable_entity
+      return
+    end
+    
+    # Build API payload
+    api_payload = {
+      projectId: @project.id.to_i,
+      pdaId: params_hash[:pda_id].to_i,
+      name: params_hash[:name],
+      createdBy: current_user.id.to_i
+    }
+    
+    # Add friendlyName if present (optional)
+    api_payload[:friendlyName] = params_hash[:friendly_name] if params_hash[:friendly_name].present?
+    
+    # Call API
+    gis_service = ::GisAPI::GisApiService.new
+    result = gis_service.create_land_negotiation(api_payload)
+    
+    if result.success?
+      flash[:notice] = I18n.t(:notice_successful_create)
+      redirect_to by_pda_id_project_settings_pda_nfs_path(@project, pda_id: pda_id)
+    else
+      error_message = result.errors.full_messages.join(", ") rescue "Failed to create land negotiation"
+      flash.now[:error] = error_message
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  def edit
+    negotiation_id = params[:negotiation_id]
+    pda_id = params[:pda_id] || params[:id]
+    
+    unless negotiation_id.present?
+      flash[:error] = "Negotiation ID is required"
+      redirect_to project_settings_pda_nfs_path(@project)
+      return
+    end
+    
+    @negotiation_id = negotiation_id
+    @pda_id = pda_id
+    
+    # Fetch negotiation data from API to pre-fill the form
+    gis_service = ::GisAPI::GisApiService.new
+    
+    # Try to get negotiation data from PDA API response
+    if pda_id.present?
+      pda_result = gis_service.get_pda(pda_id)
+      if pda_result.respond_to?(:success?) && pda_result.success?
+        pda_data = pda_result.result
+        if pda_data["negotiationRel"].present? && pda_data["negotiationRel"].is_a?(Array)
+          negotiation_data = pda_data["negotiationRel"].find do |neg|
+            neg_id = neg["landNegotiationId"] || neg["id"]
+            neg_id.to_s == negotiation_id.to_s
+          end
+          
+          if negotiation_data.present?
+            # Parse and format estimated_completion date if present
+            estimated_completion_value = nil
+            if negotiation_data["estimatedCompletion"].present?
+              begin
+                date_str = negotiation_data["estimatedCompletion"]
+                # Handle ISO 8601 format with time (e.g., "2025-09-23T00:00:00Z")
+                date = date_str.is_a?(String) ? Date.parse(date_str.split("T").first) : date_str
+                estimated_completion_value = date.strftime("%Y-%m-%d")
+              rescue ArgumentError, TypeError
+                # If parsing fails, try to extract date part or use as-is
+                estimated_completion_value = date_str.to_s.split("T").first if date_str.present?
+              end
+            elsif negotiation_data["estimated_completion"].present?
+              begin
+                date_str = negotiation_data["estimated_completion"]
+                date = date_str.is_a?(String) ? Date.parse(date_str.split("T").first) : date_str
+                estimated_completion_value = date.strftime("%Y-%m-%d")
+              rescue ArgumentError, TypeError
+                estimated_completion_value = date_str.to_s.split("T").first if date_str.present?
+              end
+            end
+            
+            @negotiation_form = Projects::Settings::LandNegotiationFormObject.new(
+              pda_id: pda_id,
+              name: negotiation_data["name"],
+              friendly_name: negotiation_data["friendlyName"] || negotiation_data["friendly_name"],
+              negotiation_status: negotiation_data["negotiationStatus"] || negotiation_data["negotiation_status"],
+              success_rating: negotiation_data["successRating"] || negotiation_data["success_rating"],
+              estimated_completion: estimated_completion_value
+            )
+            
+            # Fetch status lookup data
+            status_result = gis_service.get_negotiation_status_lookup
+            @status_options = []
+            if status_result.respond_to?(:success?) && status_result.success?
+              status_data = status_result.result
+              @status_options = if status_data.is_a?(Hash) && status_data["data"].is_a?(Array)
+                                  status_data["data"]
+                                elsif status_data.is_a?(Array)
+                                  status_data
+                                else
+                                  []
+                                end
+            end
+            
+            return
+          end
+        end
+      end
+    end
+    
+    # Fetch status lookup data
+    gis_service = ::GisAPI::GisApiService.new
+    status_result = gis_service.get_negotiation_status_lookup
+    @status_options = []
+    if status_result.respond_to?(:success?) && status_result.success?
+      status_data = status_result.result
+      @status_options = if status_data.is_a?(Hash) && status_data["data"].is_a?(Array)
+                          status_data["data"]
+                        elsif status_data.is_a?(Array)
+                          status_data
+                        else
+                          []
+                        end
+    end
+    
+    # Fallback: initialize empty form
+    @negotiation_form = Projects::Settings::LandNegotiationFormObject.new(
+      pda_id: pda_id,
+      name: "",
+      friendly_name: "",
+      negotiation_status: nil,
+      success_rating: "",
+      estimated_completion: ""
+    )
+  end
+
+  def update
+    negotiation_id = params[:negotiation_id]
+    pda_id = params[:pda_id] || params[:id]
+    
+    unless negotiation_id.present?
+      flash[:error] = "Negotiation ID is required"
+      redirect_to project_settings_pda_nfs_path(@project)
+      return
+    end
+    
+    params_hash = land_negotiation_params.to_h
+    
+    @negotiation_id = negotiation_id
+    @pda_id = pda_id
+    @negotiation_form = Projects::Settings::LandNegotiationFormObject.new(params_hash)
+    
+    unless current_user.present?
+      flash.now[:error] = "You must be logged in to update a land negotiation."
+      render :edit, status: :unprocessable_entity
+      return
+    end
+    
+    # Build API payload
+    api_payload = {
+      landNegotiationId: negotiation_id.to_i,
+      name: params_hash[:name],
+      modifiedBy: current_user.id.to_i
+    }
+    
+    # Add optional fields if present
+    api_payload[:friendlyName] = params_hash[:friendly_name] if params_hash[:friendly_name].present?
+    api_payload[:negotiationStatus] = params_hash[:negotiation_status].to_i if params_hash[:negotiation_status].present?
+    api_payload[:successRating] = params_hash[:success_rating] if params_hash[:success_rating].present?
+    
+    # Format date if present
+    if params_hash[:estimated_completion].present?
+      begin
+        date = Date.parse(params_hash[:estimated_completion])
+        api_payload[:estimatedCompletion] = date.strftime("%Y-%m-%d")
+      rescue ArgumentError
+        # If date parsing fails, use as-is
+        api_payload[:estimatedCompletion] = params_hash[:estimated_completion]
+      end
+    end
+    
+    # Call API
+    gis_service = ::GisAPI::GisApiService.new
+    result = gis_service.update_land_negotiation(api_payload)
+    
+    if result.success?
+      flash[:notice] = I18n.t(:notice_successful_update)
+      # Redirect back to negotiation show page
+      if @pda_id.present?
+        redirect_to negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: negotiation_id)
+      elsif params[:id].present?
+        redirect_to negotiation_project_settings_pda_nf_path(@project, params[:id], negotiation_id: negotiation_id)
+      else
+        redirect_to project_settings_pda_nfs_path(@project)
+      end
+    else
+      error_message = result.errors.full_messages.join(", ") rescue "Failed to update land negotiation"
+      flash[:error] = error_message
+      # Redirect back to show page with error
+      if @pda_id.present?
+        redirect_to negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: negotiation_id)
+      elsif params[:id].present?
+        redirect_to negotiation_project_settings_pda_nf_path(@project, params[:id], negotiation_id: negotiation_id)
+      else
+        redirect_to project_settings_pda_nfs_path(@project)
+      end
+    end
+  end
 
   # Show negotiation details with landowners (API-only)
   def show_negotiation
@@ -161,6 +400,78 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
 
     # Store negotiation ID for display
     @negotiation_id = negotiation_id
+    
+    # Load negotiation data for edit form
+    @negotiation_form = nil
+    if pda_id.present?
+      pda_result = gis_service.get_pda(pda_id)
+      if pda_result.respond_to?(:success?) && pda_result.success?
+        pda_data = pda_result.result
+        if pda_data["negotiationRel"].present? && pda_data["negotiationRel"].is_a?(Array)
+          negotiation_data = pda_data["negotiationRel"].find do |neg|
+            neg_id = neg["landNegotiationId"] || neg["id"]
+            neg_id.to_s == negotiation_id.to_s
+          end
+          
+          if negotiation_data.present?
+            # Parse and format estimated_completion date if present
+            estimated_completion_value = nil
+            if negotiation_data["estimatedCompletion"].present?
+              begin
+                date_str = negotiation_data["estimatedCompletion"]
+                # Handle ISO 8601 format with time (e.g., "2025-09-23T00:00:00Z")
+                date = date_str.is_a?(String) ? Date.parse(date_str.split("T").first) : date_str
+                estimated_completion_value = date.strftime("%Y-%m-%d")
+              rescue ArgumentError, TypeError
+                # If parsing fails, try to extract date part or use as-is
+                estimated_completion_value = date_str.to_s.split("T").first if date_str.present?
+              end
+            elsif negotiation_data["estimated_completion"].present?
+              begin
+                date_str = negotiation_data["estimated_completion"]
+                date = date_str.is_a?(String) ? Date.parse(date_str.split("T").first) : date_str
+                estimated_completion_value = date.strftime("%Y-%m-%d")
+              rescue ArgumentError, TypeError
+                estimated_completion_value = date_str.to_s.split("T").first if date_str.present?
+              end
+            end
+            
+            @negotiation_form = Projects::Settings::LandNegotiationFormObject.new(
+              pda_id: @pda_id,
+              name: negotiation_data["name"] || "",
+              friendly_name: negotiation_data["friendlyName"] || negotiation_data["friendly_name"] || "",
+              negotiation_status: negotiation_data["negotiationStatus"] || negotiation_data["negotiation_status"],
+              success_rating: negotiation_data["successRating"] || negotiation_data["success_rating"],
+              estimated_completion: estimated_completion_value
+            )
+          end
+        end
+      end
+    end
+    
+    # Fetch status lookup data for the form
+    status_result = gis_service.get_negotiation_status_lookup
+    @status_options = []
+    if status_result.respond_to?(:success?) && status_result.success?
+      status_data = status_result.result
+      @status_options = if status_data.is_a?(Hash) && status_data["data"].is_a?(Array)
+                          status_data["data"]
+                        elsif status_data.is_a?(Array)
+                          status_data
+                        else
+                          []
+                        end
+    end
+    
+    # Fallback: initialize empty form if not found
+    @negotiation_form ||= Projects::Settings::LandNegotiationFormObject.new(
+      pda_id: @pda_id,
+      name: "",
+      friendly_name: "",
+      negotiation_status: nil,
+      success_rating: "",
+      estimated_completion: ""
+    )
 
     render :show
   end
@@ -337,6 +648,10 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
   end
 
   private
+
+  def land_negotiation_params
+    params.require(:land_negotiation).permit(:pda_id, :name, :friendly_name, :negotiation_status, :success_rating, :estimated_completion)
+  end
 
   def fetch_negotiation_contracts_api_data(negotiation_id)
     return nil unless negotiation_id.present?

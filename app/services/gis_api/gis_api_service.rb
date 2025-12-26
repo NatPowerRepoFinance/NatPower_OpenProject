@@ -104,6 +104,23 @@ module GisAPI
     # Fetch landowners by negotiation ID from the GIS API
     # @param negotiation_id [String, Integer] The ID of the negotiation
     # @return [ServiceResult] ServiceResult with landowners data
+
+    def create_land_negotiation(attributes)
+      endpoint = "/erp/negotiation/land/create"
+      payload = attributes.to_json
+      make_request(:post, endpoint, body: payload)
+    end
+
+    def update_land_negotiation(attributes)
+      endpoint = "/erp/negotiation/land/update"
+      payload = attributes.to_json
+      make_request(:patch, endpoint, body: payload)
+    end
+
+    def get_negotiation_status_lookup
+      endpoint = "/erp/negotiation/contractnego/status"
+      make_request(:get, endpoint)
+    end
     def get_landowners(negotiation_id)
       endpoint = "/erp/landowner/#{negotiation_id}"
       make_request(:get, endpoint)

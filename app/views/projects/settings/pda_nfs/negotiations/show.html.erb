@@ -57,6 +57,72 @@
   end
 %>
 
+<%# Edit Form Section %>
+<% if flash[:error].present? %>
+  <div class="flash error">
+    <%= flash[:error] %>
+  </div>
+<% end %>
+
+<div class="generic-form" style="margin-bottom: 2rem;">
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Edit Negotiation</legend>
+    
+    <%= labelled_tabular_form_with model: @negotiation_form,
+                                   url: (@pda_id.present? ? update_negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: @negotiation_id) : update_negotiation_project_settings_pda_nf_path(@project, params[:id], negotiation_id: @negotiation_id)),
+                                   method: :patch,
+                                   scope: :land_negotiation,
+                                   html: { class: "form" } do |f| %>
+
+      <div class="form--field">
+        <label class="form--label">PDA ID</label>
+        <div class="form--field-container">
+          <input type="text" value="<%= @pda_id %>" readonly class="form--text-field" />
+        </div>
+      </div>
+
+      <div class="form--field -required">
+        <%= f.text_field :name,
+                          required: true,
+                          container_class: "-middle",
+                          label: "Name" %>
+      </div>
+
+      <div class="form--field">
+        <%= f.text_field :friendly_name,
+                          container_class: "-middle",
+                          label: "Friendly Name" %>
+      </div>
+
+      <div class="form--field">
+        <%= f.select :negotiation_status,
+                      options_for_select(
+                        (@status_options || []).map { |status| [status["status"], status["id"]] },
+                        @negotiation_form.negotiation_status
+                      ),
+                      { prompt: "Select Status", container_class: "-middle", label: "Negotiation Status" },
+                      {} %>
+      </div>
+
+      <div class="form--field">
+        <%= f.text_field :success_rating,
+                          container_class: "-middle",
+                          label: "Success Rating" %>
+      </div>
+
+      <div class="form--field">
+        <%= f.date_field :estimated_completion,
+                          container_class: "-middle",
+                          label: "Estimated Completion" %>
+      </div>
+
+      <div class="form--field">
+        <%= f.submit t(:button_save), class: "button -primary -with-icon icon-checkmark" %>
+      </div>
+    <% end %>
+  </fieldset>
+</div>
+
 <div class="generic-form">
   <fieldset class="form--fieldset">
     <legend class="form--fieldset-legend">
