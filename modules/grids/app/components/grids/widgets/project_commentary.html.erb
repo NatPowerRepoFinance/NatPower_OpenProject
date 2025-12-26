@@ -1,0 +1,52 @@
+<%= widget_wrapper do |container|
+  container.with_row(mb: 2) do
+    render(Primer::Beta::Button.new(
+      scheme: :primary,
+      leading_icon: :plus,
+      tag: :a,
+      href: new_project_commentary_path(project)
+    )) { "Create Commentary" }
+  end
+
+  if commentary_items.any?
+    commentary_items.each do |comment|
+      container.with_row(mb: 3) do
+        content_tag(:div, class: "commentary-item") do
+          concat(
+            content_tag(:div, class: "commentary-header", style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;") do
+              concat(
+                content_tag(:h4, style: "margin: 0; font-size: 1rem; font-weight: 600;") do
+                  h(comment["headline"] || comment[:headline] || "No headline")
+                end
+              )
+              concat(
+                content_tag(:div, style: "display: flex; gap: 0.5rem; align-items: center;") do
+                  concat(
+                    render(Primer::Beta::Label.new(size: :medium, scheme: rating_badge_scheme(comment["projectRating"] || comment[:projectRating]))) do
+                      rating_label(comment["projectRating"] || comment[:projectRating])
+                    end
+                  )
+                  concat(
+                    content_tag(:span, style: "color: #6b7280; font-size: 0.875rem;") do
+                      format_comment_date(comment["commentDate"] || comment[:commentDate])
+                    end
+                  )
+                end
+              )
+            end
+          )
+          concat(
+            content_tag(:p, style: "margin: 0; color: #374151; line-height: 1.5;") do
+              h(comment["detailedComment"] || comment[:detailedComment] || "")
+            end
+          )
+        end
+      end
+    end
+  else
+    container.with_row do
+      render(Primer::Beta::Text.new(color: :subtle)) { t(".no_commentary", default: "No commentary available") }
+    end
+  end
+end %>
+

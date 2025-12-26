@@ -27,6 +27,9 @@ en:
       pdas:
         title: "PDAs"
         no_pdas: "No PDAs added yet."
+      project_commentary:
+        title: "Project Commentary"
+        no_commentary: "No commentary available."
 
   activerecord:
     attributes:

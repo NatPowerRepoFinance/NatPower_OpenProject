@@ -219,11 +219,11 @@ end %>
         Land Negotiations
         <span class="form--toolbar-item" style="color: #656d76; font-size: 0.875rem; margin-left: 1rem;">
         </span>
-        <% if @pda_nf&.persisted? %>
+        <% if @pda_id.present? %>
         <div class="form--toolbar">
           <span class="form--toolbar-item">
-            <%= link_to "Add Land Negotiation",
-                        new_project_settings_pda_nf_negotiation_path(@project, @pda_nf),
+            <%= link_to "Create Land Negotiation",
+                        new_negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id),
                         class: "button -primary" %>
           </span>
         </div>

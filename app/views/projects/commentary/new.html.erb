@@ -1,0 +1,78 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Create Commentary" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       "Create Commentary"]
+    )
+  end
+%>
+
+<% if flash[:error].present? %>
+  <div class="flash error">
+    <%= flash[:error] %>
+  </div>
+<% end %>
+
+<%= form_with url: project_commentary_index_path(@project),
+              method: :post,
+              scope: :commentary,
+              html: { class: "form" } do |f| %>
+  
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Commentary Details</legend>
+    
+    <div class="form--field -required">
+      <%= f.label :headline, "Headline", class: "form--label" %>
+      <div class="form--field-container">
+        <%= f.text_field :headline,
+                         value: @commentary_form[:headline],
+                         required: true,
+                         class: "form--text-field" %>
+      </div>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.label :detailedComment, "Detailed Comment", class: "form--label" %>
+      <div class="form--field-container">
+        <%= f.text_area :detailedComment,
+                        value: @commentary_form[:detailedComment],
+                        rows: 5,
+                        required: true,
+                        class: "form--text-area" %>
+      </div>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.label :commentDate, "Comment Date", class: "form--label" %>
+      <div class="form--field-container">
+        <%= f.date_field :commentDate,
+                         value: @commentary_form[:commentDate],
+                         required: true,
+                         class: "form--text-field" %>
+      </div>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.label :projectRating, "Project Rating", class: "form--label" %>
+      <div class="form--field-container">
+        <%= f.select :projectRating,
+                     options_for_select([
+                       ["Positive", 1],
+                       ["Neutral", 2],
+                       ["Negative", 3]
+                     ], @commentary_form[:projectRating]),
+                     { required: true },
+                     { class: "form--select" } %>
+      </div>
+    </div>
+
+    <div class="form--field">
+      <%= f.submit "Create Commentary", class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel),
+                  project_path(@project),
+                  class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+
