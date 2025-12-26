@@ -275,6 +275,8 @@ Rails.application.routes.draw do
 
   resources :projects, except: %i[new show edit update] do
     scope module: "projects" do
+      resources :commentary, only: %i[new create], controller: "commentary"
+      
       namespace "settings" do
         resource :general, only: %i[show update], controller: "general" do
           get :toggle_public_dialog
@@ -305,11 +307,24 @@ Rails.application.routes.draw do
         resources :pda_nfs, only: %i[index show new create edit update destroy] do
           collection do
             get "by_pda_id/:pda_id", action: :show_by_pda_id, as: :by_pda_id
+            get "by_pda_id/:pda_id/edit", action: :edit, as: :edit_by_pda_id
+            patch "by_pda_id/:pda_id", action: :update, as: :update_by_pda_id
+            
+            get "by_pda_id/:pda_id/negotiation/:negotiation_id", controller: "pda_nfs/negotiations", action: :show_negotiation, as: :negotiation_by_pda_id
+            get "by_pda_id/:pda_id/negotiation/:negotiation_id/edit", controller: "pda_nfs/negotiations", action: :edit, as: :edit_negotiation_by_pda_id
+            patch "by_pda_id/:pda_id/negotiation/:negotiation_id", controller: "pda_nfs/negotiations", action: :update, as: :update_negotiation_by_pda_id
+            get "by_pda_id/:pda_id/negotiation/:negotiation_id/land_title/:title_no", controller: "pda_nfs/negotiations", action: :show_land_title_api, as: :land_title_api_by_pda_id
+            get "by_pda_id/:pda_id/negotiation/:negotiation_id/contracts", controller: "pda_nfs/negotiations", action: :negotiation_contracts, as: :negotiation_contracts_by_pda_id
+            
+            get "by_pda_id/:pda_id/negotiations/new", controller: "pda_nfs/negotiations", action: :new, as: :new_negotiation_by_pda_id
+            post "by_pda_id/:pda_id/negotiations", controller: "pda_nfs/negotiations", action: :create, as: :negotiations_by_pda_id
           end
           
-          # API-based negotiations routes
+          # API-based negotiations routes (member routes for backward compatibility)
           member do
             get "negotiation/:negotiation_id", controller: "pda_nfs/negotiations", action: :show_negotiation, as: :negotiation
+            get "negotiation/:negotiation_id/edit", controller: "pda_nfs/negotiations", action: :edit, as: :edit_negotiation
+            patch "negotiation/:negotiation_id", controller: "pda_nfs/negotiations", action: :update, as: :update_negotiation
             get "negotiation/:negotiation_id/land_title/:title_no", controller: "pda_nfs/negotiations", action: :show_land_title_api, as: :land_title_api
             get "negotiation/:negotiation_id/contracts", controller: "pda_nfs/negotiations", action: :negotiation_contracts, as: :negotiation_contracts
           end

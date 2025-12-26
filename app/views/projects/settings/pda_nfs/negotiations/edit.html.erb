@@ -1,0 +1,64 @@
+
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Edit Land Negotiation" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
+       { href: project_settings_pda_nfs_path(@project.id), text: "PDAs" },
+       "Edit Land Negotiation"]
+    )
+  end
+%>
+
+<% if flash[:error].present? %>
+  <div class="flash error">
+    <%= flash[:error] %>
+  </div>
+<% end %>
+
+<%= labelled_tabular_form_with model: @negotiation_form,
+                               url: (@pda_id.present? ? update_negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: @negotiation_id) : update_negotiation_project_settings_pda_nf_path(@project, params[:id], negotiation_id: @negotiation_id)),
+                               method: :patch,
+                               scope: :land_negotiation,
+                               html: { class: "form" } do |f| %>
+  
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Land Negotiation Information</legend>
+    
+    <div class="form--field">
+      <label class="form--label">Negotiation ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @negotiation_id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field">
+      <label class="form--label">PDA ID</label>
+      <div class="form--field-container">
+        <input type="text" value="<%= @pda_id %>" readonly class="form--text-field" />
+      </div>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.text_field :name,
+                        required: true,
+                        container_class: "-middle",
+                        label: "Name" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.text_field :friendly_name,
+                        container_class: "-middle",
+                        label: "Friendly Name" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.submit t(:button_save), class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel), 
+                  (@pda_id.present? ? negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: @negotiation_id) : negotiation_project_settings_pda_nf_path(@project, params[:id], negotiation_id: @negotiation_id)), 
+                  class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+
