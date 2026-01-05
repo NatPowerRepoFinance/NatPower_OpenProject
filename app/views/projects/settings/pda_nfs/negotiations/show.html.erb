@@ -135,7 +135,17 @@
     <%# Land Owners Section %>
     <% if (@contacts.present? && @contacts.any?) || (@companies.present? && @companies.any?) %>
       <section class="form--section">
-        <h3 class="form--section-title">Land Owners</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 class="form--section-title" style="margin: 0;">Land Owners</h3>
+          <% 
+            link_url = if @pda_id.present?
+              link_contact_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: @negotiation_id)
+            else
+              link_contact_project_settings_pda_nf_path(@project, @pda_nf, negotiation_id: @negotiation_id)
+            end
+          %>
+          <%= link_to "Link Contact", link_url, class: "button -primary -with-icon icon-plus" %>
+        </div>
         
         <%# Contacts Subsection %>
     <% if @contacts.present? && @contacts.any? %>

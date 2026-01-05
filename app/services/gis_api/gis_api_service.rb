@@ -52,6 +52,15 @@ module GisAPI
       make_request(:post, endpoint, body: payload)
     end
 
+    # Create a new ERP project via the GIS API
+    # @param attributes [Hash] Hash containing project attributes
+    # @return [ServiceResult] ServiceResult with created ERP project data
+    def create_erp_project(attributes)
+      endpoint = "/erp/project/create"
+      payload = attributes.to_json
+      make_request(:post, endpoint, body: payload)
+    end
+
     # Fetch project details by ID from the GIS API
     # @param project_id [String, Integer] The ID of the project to fetch
     # @return [ServiceResult] ServiceResult with project details
@@ -65,6 +74,88 @@ module GisAPI
     def get_project_lookup_data
       endpoint = "/erp/project/lookupdata"
       make_request(:get, endpoint)
+    end
+
+    def get_project_journal(project_id)
+      endpoint = "/erp/project/journal/#{project_id}"
+      make_request(:get, endpoint)
+    end
+
+    def get_all_companies
+      endpoint = "/erp/company/all"
+      make_request(:get, endpoint)
+    end
+
+    def get_all_addresses
+      endpoint = "/erp/address/all"
+      make_request(:get, endpoint)
+    end
+
+    def get_all_countries
+      endpoint = "/erp/countries/all"
+      make_request(:get, endpoint)
+    end
+
+    def create_address(attributes)
+      endpoint = "/erp/address/create"
+      payload = attributes.to_json
+      
+      # Log curl command for debugging
+      url = "#{BASE_URL}#{endpoint}"
+      curl_command = build_curl_command(:post, url, payload)
+      Rails.logger.info("=" * 80)
+      Rails.logger.info("CURL COMMAND (copy-paste to Postman/terminal):")
+      Rails.logger.info(curl_command)
+      Rails.logger.info("=" * 80)
+      
+      make_request(:post, endpoint, body: payload)
+    end
+
+    def update_address(attributes)
+      endpoint = "/erp/address/update"
+      payload = attributes.to_json
+      
+      # Log curl command for debugging
+      url = "#{BASE_URL}#{endpoint}"
+      curl_command = build_curl_command(:patch, url, payload)
+      Rails.logger.info("=" * 80)
+      Rails.logger.info("CURL COMMAND (copy-paste to Postman/terminal):")
+      Rails.logger.info(curl_command)
+      Rails.logger.info("=" * 80)
+      
+      make_request(:patch, endpoint, body: payload)
+    end
+
+    def get_job_roles
+      endpoint = "/erp/jobs/all"
+      make_request(:get, endpoint)
+    end
+
+    def create_company(attributes)
+      endpoint = "/erp/company/create"
+      payload = attributes.to_json
+      
+      # Log curl command for debugging
+      url = "#{BASE_URL}#{endpoint}"
+      curl_command = build_curl_command(:post, url, payload)
+      Rails.logger.info("=" * 80)
+      Rails.logger.info("CURL COMMAND (copy-paste to Postman/terminal):")
+      Rails.logger.info(curl_command)
+      Rails.logger.info("=" * 80)
+      
+      make_request(:post, endpoint, body: payload)
+    end
+
+    def create_project_journal(attributes)
+      endpoint = "/erp/project/journal/create"
+      payload = attributes.to_json
+      make_request(:post, endpoint, body: payload)
+    end
+
+    def update_project_journal(attributes)
+      endpoint = "/erp/project/journal/update"
+      payload = attributes.to_json
+      make_request(:patch, endpoint, body: payload)
     end
 
     # Update a project via the GIS API (PATCH /erp/project/update)
@@ -124,6 +215,21 @@ module GisAPI
     def get_landowners(negotiation_id)
       endpoint = "/erp/landowner/#{negotiation_id}"
       make_request(:get, endpoint)
+    end
+
+    def link_landowner_contact(attributes)
+      endpoint = "/erp/landowner/contact"
+      payload = attributes.to_json
+      
+      # Log curl command for debugging
+      url = "#{BASE_URL}#{endpoint}"
+      curl_command = build_curl_command(:post, url, payload)
+      Rails.logger.info("=" * 80)
+      Rails.logger.info("CURL COMMAND (copy-paste to Postman/terminal):")
+      Rails.logger.info(curl_command)
+      Rails.logger.info("=" * 80)
+      
+      make_request(:post, endpoint, body: payload)
     end
 
     # Fetch contracts by negotiation ID from the GIS API
@@ -547,6 +653,35 @@ module GisAPI
 
     attr_reader :api_key
 
+    def build_curl_command(method, url, payload)
+      method_upcase = method.to_s.upcase
+      # Escape single quotes and backslashes for shell safety
+      escaped_payload = payload.gsub("'", "'\\''").gsub("\\", "\\\\")
+      
+      curl = "curl -X #{method_upcase} \\\n"
+      curl += "  '#{url}' \\\n"
+      curl += "  -H 'X-Access-Token: #{api_key}' \\\n"
+      curl += "  -H 'Content-Type: application/json' \\\n"
+      curl += "  -d '#{escaped_payload}'"
+      
+      # Also provide a version with pretty-printed JSON for readability
+      begin
+        pretty_json = JSON.pretty_generate(JSON.parse(payload))
+        curl += "\n\n# Alternative with pretty JSON (save to file and use -d @file.json):\n"
+        curl += "# curl -X #{method_upcase} \\\n"
+        curl += "#   '#{url}' \\\n"
+        curl += "#   -H 'X-Access-Token: #{api_key}' \\\n"
+        curl += "#   -H 'Content-Type: application/json' \\\n"
+        curl += "#   -d @payload.json\n\n"
+        curl += "# Payload JSON:\n"
+        curl += pretty_json
+      rescue JSON::ParserError
+        # If JSON parsing fails, just use the original
+      end
+      
+      curl
+    end
+
     def make_request(method, endpoint, body: nil)
       unless api_key.present?
         errors = ActiveModel::Errors.new(self)
@@ -565,7 +700,26 @@ module GisAPI
           }
         ).public_send(method, url, body: body)
 
+        # Check HTTP status code
+        unless response.status == 200
+          error_message = "GIS API returned status #{response.status}"
+          Rails.logger.warn("GIS API: #{error_message}")
+          errors = ActiveModel::Errors.new(self)
+          errors.add(:base, error_message)
+          return ServiceResult.failure(errors: errors)
+        end
+
         data = response.json(symbolize_keys: false) rescue {}
+        
+        # Check if response data contains an error code
+        if data.is_a?(Hash) && data["code"].present? && data["code"].to_i >= 400
+          error_message = data["message"] || "GIS API returned error code #{data["code"]}"
+          Rails.logger.warn("GIS API: #{error_message}")
+          errors = ActiveModel::Errors.new(self)
+          errors.add(:base, error_message)
+          return ServiceResult.failure(errors: errors)
+        end
+        
         Rails.logger.info("GIS API: Data fetched successfully")
         Rails.logger.info("GIS API: Response data type: #{data.class}")
         Rails.logger.info("GIS API: Response keys: #{data.keys.inspect if data.is_a?(Hash)}")
