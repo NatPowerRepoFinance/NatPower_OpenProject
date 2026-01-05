@@ -152,6 +152,23 @@ module GisAPI
       make_request(:post, endpoint, body: payload)
     end
 
+    def create_project_commentary(attributes)
+      endpoint = "/erp/project/commentary/create"
+      payload = attributes.to_json
+      make_request(:post, endpoint, body: payload)
+    end
+
+    def get_project_commentary(project_id)
+      endpoint = "/erp/project/commentary/#{project_id}"
+      make_request(:get, endpoint)
+    end
+
+    def update_project_commentary(attributes)
+      endpoint = "/erp/project/commentary/update"
+      payload = attributes.to_json
+      make_request(:patch, endpoint, body: payload)
+    end
+
     def update_project_journal(attributes)
       endpoint = "/erp/project/journal/update"
       payload = attributes.to_json

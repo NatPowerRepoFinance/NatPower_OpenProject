@@ -278,7 +278,7 @@ Rails.application.routes.draw do
 
   resources :projects, except: %i[new show edit update] do
     scope module: "projects" do
-      resources :commentary, only: %i[new create], controller: "commentary"
+      resources :commentary, only: %i[new create edit update], controller: "commentary"
       resources :journal, only: %i[new create edit update], controller: "journal"
       
       namespace "settings" do
