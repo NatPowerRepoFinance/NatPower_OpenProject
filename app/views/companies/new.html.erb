@@ -1,0 +1,228 @@
+<% html_title t(:label_companies_menu), t(:label_company_new) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_company_new) }
+    header.with_breadcrumbs(
+      [{ href: root_path, text: "Home" },
+       { href: companies_path, text: t(:label_companies_menu) },
+       t(:label_company_new)]
+    )
+  end
+%>
+
+<%= form_with url: companies_path, method: :post, local: true, scope: :company do |f| %>
+  <% if flash[:error].present? %>
+    <div class="op-toast -error">
+      <div class="op-toast--content">
+        <p><%= flash[:error] %></p>
+      </div>
+    </div>
+  <% end %>
+
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend"><%= t(:label_general) %></legend>
+    
+    <div class="form--field -required">
+      <%= f.label :name, t(:label_name), class: "form--label" %>
+      <%= f.text_field :name, required: true, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :website, t(:label_website), class: "form--label" %>
+      <%= f.url_field :website, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :companyNumber, "Company Number", class: "form--label" %>
+      <%= f.text_field :companyNumber, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :taxNumber, "Tax Number", class: "form--label" %>
+      <%= f.text_field :taxNumber, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :vatRate, "VAT Rate (%)", class: "form--label" %>
+      <%= f.number_field :vatRate, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :withHoldingTax, "With Holding Tax", class: "form--label" %>
+      <%= f.check_box :withHoldingTax, class: "form--check-box", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :withHoldingTaxRate, "With Holding Tax Rate (%)", class: "form--label" %>
+      <%= f.number_field :withHoldingTaxRate, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :paymentTerms, "Payment Terms (days)", class: "form--label" %>
+      <%= f.number_field :paymentTerms, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :earlyPaymentDiscount, "Early Payment Discount (%)", class: "form--label" %>
+      <%= f.number_field :earlyPaymentDiscount, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :latePaymentPenalties, "Late Payment Penalties (%)", class: "form--label" %>
+      <%= f.number_field :latePaymentPenalties, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :isDeleted, "Is Deleted", class: "form--label" %>
+      <%= f.check_box :isDeleted, class: "form--check-box", container_class: "-middle" %>
+    </div>
+  </fieldset>
+
+  <fieldset class="form--fieldset" id="addresses-fieldset">
+    <legend class="form--fieldset-legend">Addresses</legend>
+    <div id="addresses-container">
+      <div class="address-row form--field">
+        <div class="form--field">
+          <%= styled_label_tag "company[addressesRel][0][addressId]", "Address", class: "form--label" %>
+          <%= select_tag "company[addressesRel][0][addressId]", 
+              options_from_collection_for_select(@addresses, ->(a) { a["addressId"] || a[:addressId] || a["id"] || a[:id] }, 
+              ->(a) { "#{a["street"] || a[:street] || ""}, #{a["city"] || a[:city] || ""}" }), 
+              { include_blank: "Select Address", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= styled_label_tag "company[addressesRel][0][addressTypeId]", "Address Type ID", class: "form--label" %>
+          <%= number_field_tag "company[addressesRel][0][addressTypeId]", nil, class: "form--text-field", container_class: "-slim" %>
+        </div>
+        <div class="form--field">
+          <%= button_tag "Remove", type: "button", class: "button -with-icon icon-remove", onclick: "removeAddressRow(this)" %>
+        </div>
+      </div>
+    </div>
+    <%= button_tag "Add Address", type: "button", class: "button -with-icon icon-add", onclick: "addAddressRow()" %>
+  </fieldset>
+
+  <fieldset class="form--fieldset" id="contacts-fieldset">
+    <legend class="form--fieldset-legend">Contacts</legend>
+    <div id="contacts-container">
+      <div class="contact-row form--field">
+        <div class="form--field">
+          <%= styled_label_tag "company[contactRel][0][contactId]", "Contact ID", class: "form--label" %>
+          <%= number_field_tag "company[contactRel][0][contactId]", nil, class: "form--text-field", container_class: "-slim" %>
+        </div>
+        <div class="form--field">
+          <%= styled_label_tag "company[contactRel][0][jobRoleId]", "Job Role", class: "form--label" %>
+          <%= select_tag "company[contactRel][0][jobRoleId]", 
+              options_from_collection_for_select(@job_roles, ->(jr) { jr["jobRoleId"] || jr[:jobRoleId] || jr["id"] || jr[:id] }, 
+              ->(jr) { jr["name"] || jr[:name] || jr["jobRoleName"] || jr[:jobRoleName] || "" }), 
+              { include_blank: "Select Job Role", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= button_tag "Remove", type: "button", class: "button -with-icon icon-remove", onclick: "removeContactRow(this)" %>
+        </div>
+      </div>
+    </div>
+    <%= button_tag "Add Contact", type: "button", class: "button -with-icon icon-add", onclick: "addContactRow()" %>
+  </fieldset>
+
+  <div class="form--actions">
+    <%= styled_button_tag t(:button_save), class: "-primary -with-icon icon-checkmark" %>
+    <%= link_to t(:button_cancel), companies_path, class: "button -with-icon icon-cancel" %>
+  </div>
+<% end %>
+
+<script>
+  // Pre-generate address options HTML
+  const addressOptions = `
+    <option value="">Select Address</option>
+    <% @addresses.each do |address| %>
+      <option value="<%= address["addressId"] || address[:addressId] || address["id"] || address[:id] %>">
+        <%= "#{address["street"] || address[:street] || ""}, #{address["city"] || address[:city] || ""}" %>
+      </option>
+    <% end %>
+  `;
+
+  // Pre-generate job role options HTML
+  const jobRoleOptions = `
+    <option value="">Select Job Role</option>
+    <% @job_roles.each do |job_role| %>
+      <option value="<%= job_role["jobRoleId"] || job_role[:jobRoleId] || job_role["id"] || job_role[:id] %>">
+        <%= job_role["name"] || job_role[:name] || job_role["jobRoleName"] || job_role[:jobRoleName] || "" %>
+      </option>
+    <% end %>
+  `;
+
+  let addressRowIndex = 1;
+  let contactRowIndex = 1;
+
+  function addAddressRow() {
+    const container = document.getElementById('addresses-container');
+    if (!container) {
+      console.error('Addresses container not found');
+      return;
+    }
+    
+    const newRow = document.createElement('div');
+    newRow.className = 'address-row form--field';
+    newRow.innerHTML = `
+      <div class="form--field">
+        <label for="company_addressesRel_${addressRowIndex}_addressId" class="form--label">Address</label>
+        <select name="company[addressesRel][${addressRowIndex}][addressId]" id="company_addressesRel_${addressRowIndex}_addressId" class="form--select">
+          ${addressOptions}
+        </select>
+      </div>
+      <div class="form--field">
+        <label for="company_addressesRel_${addressRowIndex}_addressTypeId" class="form--label">Address Type ID</label>
+        <input type="number" name="company[addressesRel][${addressRowIndex}][addressTypeId]" id="company_addressesRel_${addressRowIndex}_addressTypeId" class="form--text-field" />
+      </div>
+      <div class="form--field">
+        <button type="button" class="button -with-icon icon-remove" onclick="removeAddressRow(this)">Remove</button>
+      </div>
+    `;
+    container.appendChild(newRow);
+    addressRowIndex++;
+  }
+
+  function removeAddressRow(button) {
+    const row = button.closest('.address-row');
+    if (row) {
+      row.remove();
+    }
+  }
+
+  function addContactRow() {
+    const container = document.getElementById('contacts-container');
+    if (!container) {
+      console.error('Contacts container not found');
+      return;
+    }
+    
+    const newRow = document.createElement('div');
+    newRow.className = 'contact-row form--field';
+    newRow.innerHTML = `
+      <div class="form--field">
+        <label for="company_contactRel_${contactRowIndex}_contactId" class="form--label">Contact ID</label>
+        <input type="number" name="company[contactRel][${contactRowIndex}][contactId]" id="company_contactRel_${contactRowIndex}_contactId" class="form--text-field" />
+      </div>
+      <div class="form--field">
+        <label for="company_contactRel_${contactRowIndex}_jobRoleId" class="form--label">Job Role</label>
+        <select name="company[contactRel][${contactRowIndex}][jobRoleId]" id="company_contactRel_${contactRowIndex}_jobRoleId" class="form--select">
+          ${jobRoleOptions}
+        </select>
+      </div>
+      <div class="form--field">
+        <button type="button" class="button -with-icon icon-remove" onclick="removeContactRow(this)">Remove</button>
+      </div>
+    `;
+    container.appendChild(newRow);
+    contactRowIndex++;
+  }
+
+  function removeContactRow(button) {
+    const row = button.closest('.contact-row');
+    if (row) {
+      row.remove();
+    }
+  }
+</script>
+

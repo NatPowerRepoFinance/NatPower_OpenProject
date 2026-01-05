@@ -1,0 +1,64 @@
+<% html_title(t(:label_addresses_menu)) -%>
+
+<% content_for :content_header do %>
+  <%= render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { t(:label_addresses_menu) }
+    header.with_breadcrumbs([{ href: root_path, text: "Home" }, t(:label_addresses_menu)])
+    header.with_action_button(
+      tag: :a,
+      href: new_address_path,
+      scheme: :primary,
+      mobile_icon: :plus,
+      mobile_label: t(:label_address_new),
+      size: :medium
+    ) do |button|
+      button.with_leading_visual_icon(icon: :plus)
+      t(:label_address_new)
+    end
+  end %>
+<% end %>
+
+<div class="addresses-list-page">
+  <% if @addresses.any? %>
+    <div class="generic-table--container">
+      <div class="generic-table--results-container">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th>Address ID</th>
+              <th>Street</th>
+              <th>City</th>
+              <th>Postal Code</th>
+              <th>Country</th>
+              <th>State/Province</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @addresses.each do |address| %>
+              <tr>
+                <td><%= address["addressId"] || address[:addressId] || address["id"] || address[:id] %></td>
+                <td><%= h(address["street"] || address[:street] || address["streetAddress"] || address[:streetAddress] || "") %></td>
+                <td><%= h(address["city"] || address[:city] || "") %></td>
+                <td><%= h(address["postalCode"] || address[:postalCode] || address["zipCode"] || address[:zipCode] || "") %></td>
+                <td><%= h(address["country"] || address[:country] || "") %></td>
+                <td><%= h(address["state"] || address[:state] || address["province"] || address[:province] || "") %></td>
+                <td>
+                  <%= link_to "Edit", edit_address_path(address["addressId"] || address[:addressId] || address["id"] || address[:id]), 
+                      class: "button -with-icon icon-edit" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% else %>
+    <div class="op-toast -info">
+      <div class="op-toast--content">
+        <p>No addresses found.</p>
+      </div>
+    </div>
+  <% end %>
+</div>
+

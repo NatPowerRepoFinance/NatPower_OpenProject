@@ -13,6 +13,7 @@ class Projects::CommentaryController < ApplicationController
     }
   end
 
+
   def create
     params_hash = commentary_params.to_h
     
