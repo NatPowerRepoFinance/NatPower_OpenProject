@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ContactsController < ApplicationController
-  layout "admin"
+  layout "global"
 
   menu_item :contacts
 
