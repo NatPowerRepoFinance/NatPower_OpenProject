@@ -2,7 +2,11 @@
 
 <fieldset class="form--fieldset">
   <div class="form--field">
-    <%= f.number_field :honorifics_id, label: Contact.human_attribute_name(:honorifics_id), container_class: "-slim" %>
+    <%= f.select :honorifics_id, 
+        options_from_collection_for_select(@honorifics, ->(h) { h["honorificsId"] || h[:honorificsId] || h["id"] || h[:id] }, 
+        ->(h) { h["title"] || h[:title] || "" }), 
+        { include_blank: "Select Honorific" }, 
+        { class: "form--select", container_class: "-middle" } %>
   </div>
 
   <div class="form--field -required">

@@ -131,18 +131,24 @@ module GisAPI
       make_request(:get, endpoint)
     end
 
+    def get_all_contacts
+      endpoint = "/erp/contact/all"
+      make_request(:get, endpoint)
+    end
+
+    def get_address_types
+      endpoint = "/erp/address/type"
+      make_request(:get, endpoint)
+    end
+
+    def get_honorifics
+      endpoint = "/erp/contact/honorifics"
+      make_request(:get, endpoint)
+    end
+
     def create_company(attributes)
       endpoint = "/erp/company/create"
       payload = attributes.to_json
-      
-      # Log curl command for debugging
-      url = "#{BASE_URL}#{endpoint}"
-      curl_command = build_curl_command(:post, url, payload)
-      Rails.logger.info("=" * 80)
-      Rails.logger.info("CURL COMMAND (copy-paste to Postman/terminal):")
-      Rails.logger.info(curl_command)
-      Rails.logger.info("=" * 80)
-      
       make_request(:post, endpoint, body: payload)
     end
 
