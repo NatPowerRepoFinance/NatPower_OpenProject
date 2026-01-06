@@ -1,0 +1,61 @@
+<%= widget_wrapper do |container|
+  container.with_row(mb: 2) do
+    render(Primer::Beta::Button.new(
+      scheme: :primary,
+      leading_icon: :plus,
+      tag: :a,
+      href: new_project_journal_path(project)
+    )) { "Create Journal" }
+  end
+
+  if journal_items.any?
+    journal_items.each do |journal|
+      journal_id = journal["id"] || journal[:id]
+      container.with_row(mb: 3) do
+        content_tag(:div, class: "journal-item") do
+          concat(
+            content_tag(:div, class: "journal-header", style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;") do
+              concat(
+                content_tag(:h4, style: "margin: 0; font-size: 1rem; font-weight: 600;") do
+                  h(journal["title"] || journal[:title] || journal["description"] || journal[:description] || "Journal Entry")
+                end
+              )
+              concat(
+                content_tag(:div, style: "display: flex; gap: 0.5rem; align-items: center;") do
+                  if journal_id.present?
+                    concat(
+                      render(Primer::Beta::Button.new(
+                        scheme: :invisible,
+                        size: :small,
+                        tag: :a,
+                        href: edit_project_journal_path(project, journal_id)
+                      )) { "Edit" }
+                    )
+                  end
+                  concat(
+                    content_tag(:span, style: "color: #6b7280; font-size: 0.875rem;") do
+                      format_journal_date(journal["createdDate"] || journal[:createdDate] || journal["date"] || journal[:date] || journal["journalDate"] || journal[:journalDate])
+                    end
+                  )
+                end
+              )
+            end
+          )
+          journal_text = journal["journalText"] || journal[:journalText] || journal["description"] || journal[:description] || journal["notes"] || journal[:notes] || journal["content"] || journal[:content]
+          if journal_text.present?
+            concat(
+              content_tag(:div, style: "margin: 0; color: #374151; line-height: 1.5;") do
+                journal_text.html_safe
+              end
+            )
+          end
+        end
+      end
+    end
+  else
+    container.with_row do
+      render(Primer::Beta::Text.new(color: :subtle)) { t(".no_journal", default: "No journal entries available") }
+    end
+  end
+end %>
+

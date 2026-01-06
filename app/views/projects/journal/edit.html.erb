@@ -1,0 +1,44 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { "Edit Journal Entry" }
+    header.with_breadcrumbs(
+      [{ href: project_overview_path(@project.id), text: @project.name },
+       "Edit Journal Entry"]
+    )
+  end
+%>
+
+<% if flash[:error].present? %>
+  <div class="flash error">
+    <%= flash[:error] %>
+  </div>
+<% end %>
+
+<%= form_with url: project_journal_path(@project, @journal_form[:id]),
+              method: :patch,
+              scope: :journal,
+              html: { class: "form" } do |f| %>
+  
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Journal Details</legend>
+    
+    <div class="form--field -required">
+      <%= f.label :journalText, "Journal Text", class: "form--label" %>
+      <div class="form--field-container">
+        <%= f.text_area :journalText,
+                        value: @journal_form[:journalText],
+                        rows: 5,
+                        required: true,
+                        class: "form--text-area" %>
+      </div>
+    </div>
+
+    <div class="form--field">
+      <%= f.submit "Update Journal", class: "button -primary -with-icon icon-checkmark" %>
+      <%= link_to t(:button_cancel),
+                  project_path(@project),
+                  class: "button" %>
+    </div>
+  </fieldset>
+<% end %>
+

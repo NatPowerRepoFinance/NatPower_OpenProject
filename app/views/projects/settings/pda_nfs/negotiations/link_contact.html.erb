@@ -1,0 +1,68 @@
+<% html_title "Link Contact with Landowner" %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { "Link Contact with Landowner" }
+    header.with_breadcrumbs(
+      [{ href: root_path, text: "Home" },
+       { href: project_settings_pda_nfs_path(@project), text: "PDAs" },
+       "Link Contact"]
+    )
+  end
+%>
+
+<% 
+  if @pda_id.present?
+    form_url = create_contact_link_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: @negotiation_id)
+    cancel_url = negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: @negotiation_id)
+  elsif @pda_nf.present?
+    form_url = create_contact_link_project_settings_pda_nf_path(@project, @pda_nf, negotiation_id: @negotiation_id)
+    cancel_url = negotiation_project_settings_pda_nf_path(@project, @pda_nf, negotiation_id: @negotiation_id)
+  else
+    form_url = "#"
+    cancel_url = project_settings_pda_nfs_path(@project)
+  end
+%>
+<%= form_with url: form_url, method: :post, local: true, scope: :contact_link do |f| %>
+  <% if flash[:error].present? %>
+    <div class="op-toast -error">
+      <div class="op-toast--content">
+        <p><%= flash[:error] %></p>
+      </div>
+    </div>
+  <% end %>
+
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend">Contact Link Information</legend>
+    
+    <div class="form--field -required">
+      <%= f.label :landTitleId, "Land Title ID", class: "form--label" %>
+      <%= f.text_field :landTitleId, value: @contact_link["landTitleId"] || @contact_link[:landTitleId] || @land_title_id, required: true, class: "form--text-field", container_class: "-middle" %>
+      <div class="form--field-instructions">
+        <p>Enter the land title ID (e.g., LAN51530)</p>
+      </div>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.label :contactId, "Contact ID", class: "form--label" %>
+      <%= f.number_field :contactId, value: @contact_link["contactId"] || @contact_link[:contactId], required: true, class: "form--text-field", container_class: "-middle" %>
+      <div class="form--field-instructions">
+        <p>Enter the contact ID to link</p>
+      </div>
+    </div>
+
+    <div class="form--field -required">
+      <%= f.label :landNegotiationId, "Land Negotiation ID", class: "form--label" %>
+      <%= f.number_field :landNegotiationId, value: @contact_link["landNegotiationId"] || @contact_link[:landNegotiationId] || @negotiation_id, required: true, class: "form--text-field", container_class: "-middle", readonly: true %>
+      <div class="form--field-instructions">
+        <p>Land negotiation ID (pre-filled from route)</p>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="form--actions">
+    <%= styled_button_tag t(:button_save), class: "-primary -with-icon icon-checkmark" %>
+    <%= link_to t(:button_cancel), cancel_url, class: "button -with-icon icon-cancel" %>
+  </div>
+<% end %>
+

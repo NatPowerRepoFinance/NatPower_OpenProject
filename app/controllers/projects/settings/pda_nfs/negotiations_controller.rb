@@ -29,7 +29,7 @@
 #++
 
 class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::PdaNfsController
-  skip_before_action :authorize, only: %i[show_negotiation show_land_title_api negotiation_contracts new create edit update]
+  skip_before_action :authorize, only: %i[show_negotiation show_land_title_api negotiation_contracts new create edit update link_contact create_contact_link]
 
   def new
     pda_id = params[:pda_id]
@@ -647,6 +647,165 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
     render :negotiation_contracts
   end
 
+  def link_contact
+    negotiation_id = params[:negotiation_id]
+    pda_id = params[:pda_id]
+    
+    unless negotiation_id.present?
+      flash[:error] = "Negotiation ID is required"
+      redirect_to project_settings_pda_nfs_path(@project)
+      return
+    end
+    
+    # Try to find PDA database record if pda_id is provided
+    if pda_id.present? && @project.respond_to?(:pda_nfs)
+      @pda_nf = @project.pda_nfs.find_by(id: pda_id) || @project.pda_nfs.find_by(pda_id: pda_id.to_i)
+      @pda_id = @pda_nf&.pda_id || pda_id
+    else
+      @pda_id = params[:pda_id]
+      # Try to find pda_nf from params if available
+      if params[:pda_nf_id].present?
+        @pda_nf = @project.pda_nfs.find_by(id: params[:pda_nf_id])
+      end
+    end
+    
+    @negotiation_id = negotiation_id
+    @land_title_id = params[:land_title_id] || params[:landTitleId]
+    
+    # Set default values
+    @contact_link = {
+      "landNegotiationId" => negotiation_id.to_i,
+      "landTitleId" => @land_title_id
+    }
+    
+    respond_to do |format|
+      format.html do
+        render layout: "global"
+      end
+    end
+  end
+
+  def create_contact_link
+    negotiation_id = params[:negotiation_id]
+    pda_id = params[:pda_id]
+    
+    unless negotiation_id.present?
+      flash[:error] = "Negotiation ID is required"
+      redirect_to project_settings_pda_nfs_path(@project)
+      return
+    end
+    
+    gis_service = ::GisAPI::GisApiService.new
+    contact_link_params_hash = contact_link_params
+    
+    # Validate parameters
+    validation_errors = validate_contact_link_params(contact_link_params_hash)
+    if validation_errors.any?
+      @negotiation_id = negotiation_id
+      @pda_id = pda_id
+      @contact_link = contact_link_params_hash
+      flash.now[:error] = validation_errors.join(", ")
+      return render :link_contact, status: :unprocessable_entity
+    end
+    
+    Rails.logger.debug("=" * 80)
+    Rails.logger.debug("LINK LANDOWNER CONTACT - Request Params:")
+    Rails.logger.debug(contact_link_params_hash.inspect)
+    Rails.logger.debug("LINK LANDOWNER CONTACT - JSON Payload:")
+    Rails.logger.debug(contact_link_params_hash.to_json)
+    
+    # Generate curl command for Postman/testing
+    url = "https://natpower-gis-project-dev.azurewebsites.net/erp/landowner/contact"
+    payload_json = contact_link_params_hash.to_json
+    api_key = ENV["GIS_API_KEY"] || "YOUR_API_KEY_HERE"
+    curl_command = "curl -X POST \\\n"
+    curl_command += "  '#{url}' \\\n"
+    curl_command += "  -H 'X-Access-Token: #{api_key}' \\\n"
+    curl_command += "  -H 'Content-Type: application/json' \\\n"
+    curl_command += "  -d '#{payload_json.gsub("'", "'\\''")}'"
+    
+    Rails.logger.info("=" * 80)
+    Rails.logger.info("CURL COMMAND FOR POSTMAN/TERMINAL:")
+    Rails.logger.info(curl_command)
+    Rails.logger.info("")
+    Rails.logger.info("POSTMAN REQUEST DETAILS:")
+    Rails.logger.info("  Method: POST")
+    Rails.logger.info("  URL: #{url}")
+    Rails.logger.info("  Headers:")
+    Rails.logger.info("    X-Access-Token: #{api_key}")
+    Rails.logger.info("    Content-Type: application/json")
+    Rails.logger.info("  Body (raw JSON):")
+    Rails.logger.info(JSON.pretty_generate(contact_link_params_hash))
+    Rails.logger.info("=" * 80)
+    Rails.logger.debug("=" * 80)
+    
+    result = gis_service.link_landowner_contact(contact_link_params_hash)
+    
+    Rails.logger.debug("=" * 80)
+    Rails.logger.debug("LINK LANDOWNER CONTACT - API Response:")
+    Rails.logger.debug("Success: #{result.success?}")
+    Rails.logger.debug("Result: #{result.result.inspect}")
+    Rails.logger.debug("Result class: #{result.result.class}")
+    if result.respond_to?(:errors)
+      Rails.logger.debug("Errors: #{result.errors.inspect}")
+      if result.errors.respond_to?(:full_messages)
+        Rails.logger.debug("Error messages: #{result.errors.full_messages.inspect}")
+      end
+    end
+    Rails.logger.debug("=" * 80)
+    
+    # Handle API responses: 200 success, 400 validation error, 401 auth error
+    response_data = result.result
+    
+    # Check if API returned an error code in the response (400 validation error)
+    api_error_code = response_data.is_a?(Hash) ? (response_data["code"] || response_data[:code]) : nil
+    api_error_message = response_data.is_a?(Hash) ? (response_data["message"] || response_data[:message]) : nil
+    
+    # Handle 400 validation errors
+    if result.success? && api_error_code.present? && api_error_code == 400
+      Rails.logger.warn("API returned validation error (400): #{api_error_message}")
+      @negotiation_id = negotiation_id
+      @pda_id = pda_id
+      @contact_link = contact_link_params_hash
+      error_message = api_error_message || "Validation error: Failed to link contact"
+      flash.now[:error] = error_message
+      render :link_contact, status: :unprocessable_entity
+    # Handle 401 auth errors
+    elsif !result.success? && result.errors.any?
+      error_messages = result.errors.respond_to?(:full_messages) ? result.errors.full_messages : [result.errors.to_s]
+      if error_messages.any? { |msg| msg.include?("401") || msg.include?("auth") || msg.include?("unauthorized") }
+        Rails.logger.error("API returned authentication error (401)")
+        @negotiation_id = negotiation_id
+        @pda_id = pda_id
+        @contact_link = contact_link_params_hash
+        flash.now[:error] = "Authentication error: Please check your API key"
+        render :link_contact, status: :unprocessable_entity
+      else
+        @negotiation_id = negotiation_id
+        @pda_id = pda_id
+        @contact_link = contact_link_params_hash
+        error_message = error_messages.join(", ")
+        flash.now[:error] = error_message
+        render :link_contact, status: :unprocessable_entity
+      end
+    # Handle 200 success
+    elsif result.success?
+      flash[:notice] = "Contact linked successfully"
+      if pda_id.present?
+        redirect_to negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: pda_id, negotiation_id: negotiation_id)
+      else
+        redirect_to project_settings_pda_nfs_path(@project)
+      end
+    else
+      @negotiation_id = negotiation_id
+      @pda_id = pda_id
+      @contact_link = contact_link_params_hash
+      error_message = "Failed to link contact"
+      flash.now[:error] = error_message
+      render :link_contact, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def land_negotiation_params
@@ -692,6 +851,43 @@ class Projects::Settings::PdaNfs::NegotiationsController < Projects::Settings::P
 
   def api_key
     ENV["GIS_API_KEY"]
+  end
+
+  def contact_link_params
+    permitted = params.require(:contact_link).permit(:landTitleId, :contactId, :landNegotiationId)
+    
+    # Build hash with string keys in camelCase format (as expected by API)
+    params_hash = {}
+    
+    # String field
+    params_hash["landTitleId"] = permitted[:landTitleId].to_s.strip if permitted[:landTitleId].present?
+    
+    # Numeric fields
+    params_hash["contactId"] = permitted[:contactId].to_i if permitted[:contactId].present?
+    params_hash["landNegotiationId"] = permitted[:landNegotiationId].to_i if permitted[:landNegotiationId].present?
+    
+    params_hash
+  end
+
+  def validate_contact_link_params(params_hash)
+    errors = []
+    
+    # Rule: landTitleId is mandatory
+    if params_hash["landTitleId"].blank?
+      errors << "Land Title ID is required"
+    end
+    
+    # Rule: contactId is mandatory
+    if params_hash["contactId"].blank? || params_hash["contactId"].to_i.zero?
+      errors << "Contact ID is required"
+    end
+    
+    # Rule: landNegotiationId is mandatory
+    if params_hash["landNegotiationId"].blank? || params_hash["landNegotiationId"].to_i.zero?
+      errors << "Land Negotiation ID is required"
+    end
+    
+    errors
   end
 end
 

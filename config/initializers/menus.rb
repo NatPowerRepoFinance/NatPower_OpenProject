@@ -193,6 +193,23 @@ Redmine::MenuManager.map :global_menu do |menu|
             parent: :projects,
             partial: "projects/menus/menu"
 
+  menu.push :companies,
+            { controller: "/companies", action: "index" },
+            caption: I18n.t("label_companies_menu"),
+            icon: "organization",
+            after: :projects,
+            if: ->(_) {
+              User.current.logged? || !Setting.login_required?
+            }
+
+  menu.push :addresses,
+            { controller: "/addresses", action: "index" },
+            caption: I18n.t("label_addresses_menu"),
+            icon: "location",
+            after: :companies,
+            if: ->(_) {
+              User.current.logged? || !Setting.login_required?
+            }
 
   menu.push :contacts,
             { controller: "/contacts", action: "index" },

@@ -59,6 +59,10 @@ class ProjectsController < ApplicationController
     :projects
   end
 
+  current_menu_item :new do
+    :projects
+  end
+
   current_menu_item :copy_form do
     :settings_general
   end
@@ -186,8 +190,6 @@ class ProjectsController < ApplicationController
 
   def new_blank
     @new_project = @parent&.children&.build(params.permit(:workspace_type)) || Project.new(params.permit(:workspace_type))
-
-    render layout: "no_menu"
   end
 
   def new_from_template
@@ -196,23 +198,106 @@ class ProjectsController < ApplicationController
       .new(user: current_user, source: @template, contract_options: { validate_model: false })
       .call(target_project_params: params.permit(:parent_id).to_h, attributes_only: true)
       .result
-
-    render layout: "no_menu"
   end
 
   def create_blank
-    service_call = Projects::CreateService
-      .new(user: current_user)
-      .call(permitted_params.new_project)
+    project_params = permitted_params.new_project
+    pda_nfs_attrs = project_params[:pda_nfs_attributes]&.first || {}
 
-    @new_project = service_call.result
+    # Step 1: Create cluster project using project name
+    gis_service = GisAPI::GisApiService.new
+    cluster_result = gis_service.create_project(name: project_params[:name])
 
-    if service_call.success?
-      redirect_to project_path(@new_project), notice: I18n.t(:notice_successful_create)
-    else
-      flash.now[:error] = I18n.t(:notice_unsuccessful_create_with_reason, reason: service_call.message)
+    unless cluster_result.success?
+      flash.now[:error] = I18n.t(:notice_unsuccessful_create_with_reason, reason: cluster_result.message || "Failed to create cluster project")
+      @new_project = Project.new(project_params.except(:pda_nfs_attributes))
       render action: :new, status: :unprocessable_entity
+      return
     end
+
+    # Extract project_id from cluster creation response
+    cluster_data = cluster_result.result
+    project_id = cluster_data["id"] || cluster_data[:id] || cluster_data.dig("data", "id") || cluster_data.dig(:data, :id)
+
+    unless project_id
+      flash.now[:error] = I18n.t(:notice_unsuccessful_create_with_reason, reason: "Failed to get project ID from cluster creation response")
+      @new_project = Project.new(project_params.except(:pda_nfs_attributes))
+      render action: :new, status: :unprocessable_entity
+      return
+    end
+
+    # Step 2: Create ERP project with all additional fields
+    # Helper to convert checkbox values to boolean
+    to_boolean = lambda do |value|
+      return false if value.nil? || value == "" || value == "0" || value == false
+      return true if value == "1" || value == true
+      false
+    end
+
+    # Build ERP attributes with snake_case field names as expected by the API
+    erp_attributes = {
+      project_id: project_id.to_i,
+      initial_name: pda_nfs_attrs[:initial_name].presence || project_params[:name],
+      name: pda_nfs_attrs[:name].presence || project_params[:name],
+      created_by: current_user.id,
+      project_manager_guid: pda_nfs_attrs[:project_manager_guid].presence&.to_i || -1,
+      planning_manager_guid: pda_nfs_attrs[:planning_manager_guid].presence&.to_i || -1,
+      land_manager_guid: pda_nfs_attrs[:land_manager_guid].presence&.to_i || -1,
+      mw_bess: pda_nfs_attrs[:mw_bess].presence&.to_f || 0.0,
+      mw_solar: pda_nfs_attrs[:mw_solar].presence&.to_f || 0.0,
+      mw_wind: pda_nfs_attrs[:mw_wind].presence&.to_f || 0.0,
+      mw_hydrogen: pda_nfs_attrs[:mw_hydrogen].presence&.to_f || 0.0,
+      mw_other: pda_nfs_attrs[:mw_other].presence&.to_f || 0.0,
+      mw_other_description: pda_nfs_attrs[:mw_other_description].presence,
+      status_code: pda_nfs_attrs[:status_code].presence&.to_i || 1,
+      senior_dev_manager_guid: pda_nfs_attrs[:senior_dev_manager_guid].presence&.to_i || -1,
+      project_start_date: pda_nfs_attrs[:project_start_date].presence,
+      grid_application_submitted: pda_nfs_attrs[:grid_application_submitted].presence,
+      planning_submission: pda_nfs_attrs[:planning_submission].presence,
+      planning_determination: pda_nfs_attrs[:planning_determination].presence,
+      ready_to_build: pda_nfs_attrs[:ready_to_build].presence,
+      grid_connection: pda_nfs_attrs[:grid_connection].presence,
+      cod: pda_nfs_attrs[:cod].presence,
+      spv_id: pda_nfs_attrs[:spv_id].presence&.to_i,
+      technology: pda_nfs_attrs[:technology].presence,
+      mw_hydroelectric: pda_nfs_attrs[:mw_hydroelectric].presence&.to_f || 0.0,
+      custom_substation: to_boolean.call(pda_nfs_attrs[:custom_substation]),
+      transmisson_substation: to_boolean.call(pda_nfs_attrs[:transmisson_substation]),
+      hots_date: pda_nfs_attrs[:hots_date].presence,
+      land_contracts_exchaged: pda_nfs_attrs[:land_contracts_exchaged].presence,
+      grid_offer_accepted_signed: pda_nfs_attrs[:grid_offer_accepted_signed].presence,
+      np_uk_envisaged_rev_date: pda_nfs_attrs[:np_uk_envisaged_rev_date].presence,
+      public_consultation: pda_nfs_attrs[:public_consultation].presence,
+      planning_condition_discharged: pda_nfs_attrs[:planning_condition_discharged].presence,
+      stage_code: pda_nfs_attrs[:stage_code].presence&.to_i || 0,
+      financial_code: pda_nfs_attrs[:financial_code].presence,
+      # Flag fields for date checkboxes (snake_case format)
+      actual_project_start_date_flag: to_boolean.call(pda_nfs_attrs[:has_project_start_date]),
+      actual_grid_application_submitted_flag: to_boolean.call(pda_nfs_attrs[:has_grid_application_submitted]),
+      actual_planning_submission_flag: to_boolean.call(pda_nfs_attrs[:has_planning_submission]),
+      actual_planning_determination_flag: to_boolean.call(pda_nfs_attrs[:has_planning_determination]),
+      actual_ready_to_build_flag: to_boolean.call(pda_nfs_attrs[:has_ready_to_build]),
+      actual_grid_connection_flag: to_boolean.call(pda_nfs_attrs[:has_grid_connection]),
+      actual_cod_flag: to_boolean.call(pda_nfs_attrs[:has_cod]),
+      actual_hots_date_flag: to_boolean.call(pda_nfs_attrs[:has_hots_date]),
+      actual_land_contracts_exchanged_flag: to_boolean.call(pda_nfs_attrs[:has_land_contracts_exchaged]),
+      actual_grid_offer_accepted_signed_flag: to_boolean.call(pda_nfs_attrs[:has_grid_offer_accepted_signed]),
+      actual_np_uk_envisaged_rev_date_flag: to_boolean.call(pda_nfs_attrs[:has_np_uk_envisaged_rev_date]),
+      actual_public_consultation_flag: to_boolean.call(pda_nfs_attrs[:has_public_consultation]),
+      actual_planning_condition_discharged_flag: to_boolean.call(pda_nfs_attrs[:has_planning_condition_discharged])
+    }.compact
+
+    erp_result = gis_service.create_erp_project(erp_attributes)
+
+    unless erp_result.success?
+      flash.now[:error] = I18n.t(:notice_unsuccessful_create_with_reason, reason: erp_result.message || "Failed to create ERP project")
+      @new_project = Project.new(project_params.except(:pda_nfs_attributes))
+      render action: :new, status: :unprocessable_entity
+      return
+    end
+
+    # Both APIs succeeded - redirect to projects list
+    redirect_to projects_path, notice: I18n.t(:notice_successful_create), status: :see_other
   end
 
   def create_from_template # rubocop:disable Metrics/AbcSize
@@ -269,3 +354,5 @@ class ProjectsController < ApplicationController
 
   helper_method :supported_export_formats
 end
+
+

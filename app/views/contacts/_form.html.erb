@@ -1,8 +1,39 @@
-<%= error_messages_for "contact" %>
+<% 
+  # Determine which object to use for error messages
+  error_object = nil
+  if defined?(f) && f.object.respond_to?(:errors)
+    error_object = f.object
+  elsif defined?(@contact_form) && @contact_form.respond_to?(:errors)
+    error_object = @contact_form
+  elsif defined?(@contact) && @contact.respond_to?(:errors)
+    error_object = @contact
+  end
+  
+  if error_object && error_object.errors.any?
+%>
+  <%= error_messages_for error_object %>
+<% end %>
 
 <fieldset class="form--fieldset">
   <div class="form--field">
-    <%= f.number_field :honorifics_id, label: Contact.human_attribute_name(:honorifics_id), container_class: "-slim" %>
+    <% 
+      # Get the current honorifics_id value from the form object or contact hash
+      # Convert to integer to match the API honorificsId values
+      selected_honorific_id = if f.object.respond_to?(:honorifics_id) && f.object.honorifics_id
+        f.object.honorifics_id.to_i
+      elsif contact && contact.is_a?(Hash)
+        (contact["honorificsId"] || contact[:honorificsId]).to_i
+      elsif contact && contact.respond_to?(:honorifics_id) && contact.honorifics_id
+        contact.honorifics_id.to_i
+      else
+        nil
+      end
+    %>
+    <%= f.select :honorifics_id, 
+        options_from_collection_for_select(@honorifics, ->(h) { (h["honorificsId"] || h[:honorificsId] || h["id"] || h[:id]).to_i }, 
+        ->(h) { h["title"] || h[:title] || "" }, selected_honorific_id), 
+        { include_blank: "Select Honorific" }, 
+        { class: "form--select", container_class: "-middle" } %>
   </div>
 
   <div class="form--field -required">
@@ -52,8 +83,328 @@
   </div>
 </fieldset>
 
+<% 
+  # Pre-generate address options as JSON array for JavaScript
+  address_options_data = (@addresses || []).map do |address|
+    address_id = address["addressId"] || address[:addressId] || address["id"] || address[:id]
+    address_text = "#{address["addressLine1"] || address[:addressLine1] || address["street"] || address[:street] || ""}, #{address["city"] || address[:city] || ""}".strip
+    { value: address_id, text: address_text }
+  end
+  
+  # Pre-generate address type options as JSON array for JavaScript
+  address_type_options_data = (@address_types || []).map do |address_type|
+    type_id = address_type["addressTypeId"] || address_type[:addressTypeId] || address_type["id"] || address_type[:id]
+    type_name = address_type["name"] || address_type[:name] || address_type["title"] || address_type[:title] || address_type["description"] || address_type[:description] || ""
+    { value: type_id, text: type_name }
+  end
+  
+  # Pre-generate company options as JSON array for JavaScript
+  company_options_data = (@companies || []).map do |company|
+    company_id = company["companyId"] || company[:companyId] || company["id"] || company[:id]
+    company_name = company["name"] || company[:name] || company["companyName"] || company[:companyName] || ""
+    { value: company_id, text: company_name }
+  end
+  
+  # Pre-generate job role options as JSON array for JavaScript
+  job_role_options_data = (@job_roles || []).map do |job_role|
+    role_id = job_role["jobRoleId"] || job_role[:jobRoleId] || job_role["id"] || job_role[:id]
+    role_name = job_role["name"] || job_role[:name] || job_role["title"] || job_role[:title] || job_role["jobRole"] || job_role[:jobRole] || ""
+    { value: role_id, text: role_name }
+  end
+  
+  # Get existing addresses from form or contact
+  existing_addresses = []
+  if defined?(contact) && contact.is_a?(Hash) && (contact["addressesRel"] || contact[:addressesRel])
+    existing_addresses = contact["addressesRel"] || contact[:addressesRel] || []
+  end
+  existing_addresses = [{}] if existing_addresses.empty?
+  
+  # Get existing companies from form or contact
+  existing_companies = []
+  if defined?(contact) && contact.is_a?(Hash) && (contact["companiesRel"] || contact[:companiesRel])
+    existing_companies = contact["companiesRel"] || contact[:companiesRel] || []
+  end
+  existing_companies = [{}] if existing_companies.empty?
+%>
+
+<fieldset class="form--fieldset" id="addresses-fieldset">
+  <legend class="form--fieldset-legend">Addresses</legend>
+  <div id="addresses-container">
+    <% existing_addresses.each_with_index do |addr, index| %>
+      <div class="address-row form--field">
+        <div class="form--field">
+          <%= styled_label_tag "contact[addressesRel][#{index}][addressId]", "Address", class: "form--label" %>
+          <%= select_tag "contact[addressesRel][#{index}][addressId]",
+              options_from_collection_for_select(@addresses || [], 
+                ->(a) { (a["addressId"] || a[:addressId] || a["id"] || a[:id]).to_i },
+                ->(a) { "#{a["addressLine1"] || a[:addressLine1] || a["street"] || a[:street] || ""}, #{a["city"] || a[:city] || ""}".strip },
+                (addr["addressId"] || addr[:addressId] || addr["address_id"]).to_i),
+              { include_blank: "Select Address", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= styled_label_tag "contact[addressesRel][#{index}][addressTypeId]", "Address Type", class: "form--label" %>
+          <%= select_tag "contact[addressesRel][#{index}][addressTypeId]",
+              options_from_collection_for_select(@address_types || [],
+                ->(at) { (at["addressTypeId"] || at[:addressTypeId] || at["id"] || at[:id]).to_i },
+                ->(at) { at["name"] || at[:name] || at["title"] || at[:title] || at["description"] || at[:description] || "" },
+                (addr["addressTypeId"] || addr[:addressTypeId] || addr["address_type_id"]).to_i),
+              { include_blank: "Select Address Type", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= button_tag "Remove", type: "button", class: "button -with-icon icon-remove remove-address-btn" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <%= button_tag "Add Address", type: "button", class: "button -with-icon icon-add", id: "add-address-btn" %>
+</fieldset>
+
+<fieldset class="form--fieldset" id="companies-fieldset">
+  <legend class="form--fieldset-legend">Companies</legend>
+  <div id="companies-container">
+    <% existing_companies.each_with_index do |comp, index| %>
+      <div class="company-row form--field">
+        <div class="form--field">
+          <%= styled_label_tag "contact[companiesRel][#{index}][companyId]", "Company", class: "form--label" %>
+          <%= select_tag "contact[companiesRel][#{index}][companyId]",
+              options_from_collection_for_select(@companies || [],
+                ->(c) { (c["companyId"] || c[:companyId] || c["id"] || c[:id]).to_i },
+                ->(c) { c["name"] || c[:name] || c["companyName"] || c[:companyName] || "" },
+                (comp["companyId"] || comp[:companyId] || comp["company_id"]).to_i),
+              { include_blank: "Select Company", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= styled_label_tag "contact[companiesRel][#{index}][jobRoleId]", "Job Role", class: "form--label" %>
+          <%= select_tag "contact[companiesRel][#{index}][jobRoleId]",
+              options_from_collection_for_select(@job_roles || [],
+                ->(jr) { (jr["jobRoleId"] || jr[:jobRoleId] || jr["id"] || jr[:id]).to_i },
+                ->(jr) { jr["name"] || jr[:name] || jr["title"] || jr[:title] || jr["jobRole"] || jr[:jobRole] || "" },
+                (comp["jobRoleId"] || comp[:jobRoleId] || comp["job_role_id"]).to_i),
+              { include_blank: "Select Job Role", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= styled_label_tag "contact[companiesRel][#{index}][jobTitle]", "Job Title", class: "form--label" %>
+          <%= text_field_tag "contact[companiesRel][#{index}][jobTitle]",
+              comp["jobTitle"] || comp[:jobTitle] || comp["job_title"],
+              class: "form--text-field", container_class: "-middle" %>
+        </div>
+        <div class="form--field">
+          <%= button_tag "Remove", type: "button", class: "button -with-icon icon-remove remove-company-btn" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <%= button_tag "Add Company", type: "button", class: "button -with-icon icon-add", id: "add-company-btn" %>
+</fieldset>
+
 <div class="form--actions">
   <%= styled_button_tag t(:button_save), class: "-primary -with-icon icon-checkmark" %>
   <%= link_to t(:button_cancel), contacts_path, class: "button -with-icon icon-cancel" %>
 </div>
+
+<%= nonced_javascript_tag do %>
+  (function() {
+    var addressOptions = <%= raw(address_options_data.to_json) %>;
+    var addressTypeOptions = <%= raw(address_type_options_data.to_json) %>;
+    var companyOptions = <%= raw(company_options_data.to_json) %>;
+    var jobRoleOptions = <%= raw(job_role_options_data.to_json) %>;
+    
+    var addressRowIndex = <%= existing_addresses.length %>;
+    var companyRowIndex = <%= existing_companies.length %>;
+    
+    function populateSelect(select, options, blankText) {
+      select.innerHTML = '';
+      
+      var blankOption = document.createElement('option');
+      blankOption.value = '';
+      blankOption.textContent = blankText || 'Select';
+      select.appendChild(blankOption);
+      
+      options.forEach(function(opt) {
+        var option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.text;
+        select.appendChild(option);
+      });
+    }
+    
+    function addAddressRow() {
+      var container = document.getElementById('addresses-container');
+      if (!container) return;
+      
+      var row = document.createElement('div');
+      row.className = 'address-row form--field';
+      
+      var field1 = document.createElement('div');
+      field1.className = 'form--field';
+      var label1 = document.createElement('label');
+      label1.setAttribute('for', 'contact_addressesRel_' + addressRowIndex + '_addressId');
+      label1.className = 'form--label';
+      label1.textContent = 'Address';
+      var select1 = document.createElement('select');
+      select1.setAttribute('name', 'contact[addressesRel][' + addressRowIndex + '][addressId]');
+      select1.setAttribute('id', 'contact_addressesRel_' + addressRowIndex + '_addressId');
+      select1.className = 'form--select';
+      populateSelect(select1, addressOptions, 'Select Address');
+      field1.appendChild(label1);
+      field1.appendChild(select1);
+      
+      var field2 = document.createElement('div');
+      field2.className = 'form--field';
+      var label2 = document.createElement('label');
+      label2.setAttribute('for', 'contact_addressesRel_' + addressRowIndex + '_addressTypeId');
+      label2.className = 'form--label';
+      label2.textContent = 'Address Type';
+      var select2 = document.createElement('select');
+      select2.setAttribute('name', 'contact[addressesRel][' + addressRowIndex + '][addressTypeId]');
+      select2.setAttribute('id', 'contact_addressesRel_' + addressRowIndex + '_addressTypeId');
+      select2.className = 'form--select';
+      populateSelect(select2, addressTypeOptions, 'Select Address Type');
+      field2.appendChild(label2);
+      field2.appendChild(select2);
+      
+      var field3 = document.createElement('div');
+      field3.className = 'form--field';
+      var button3 = document.createElement('button');
+      button3.setAttribute('type', 'button');
+      button3.className = 'button -with-icon icon-remove remove-address-btn';
+      button3.textContent = 'Remove';
+      field3.appendChild(button3);
+      
+      row.appendChild(field1);
+      row.appendChild(field2);
+      row.appendChild(field3);
+      
+      container.appendChild(row);
+      addressRowIndex++;
+    }
+    
+    function removeAddressRow(event) {
+      var button = event.target;
+      var row = button.closest('.address-row');
+      if (row) row.remove();
+    }
+    
+    function addCompanyRow() {
+      var container = document.getElementById('companies-container');
+      if (!container) return;
+      
+      var row = document.createElement('div');
+      row.className = 'company-row form--field';
+      
+      var field1 = document.createElement('div');
+      field1.className = 'form--field';
+      var label1 = document.createElement('label');
+      label1.setAttribute('for', 'contact_companiesRel_' + companyRowIndex + '_companyId');
+      label1.className = 'form--label';
+      label1.textContent = 'Company';
+      var select1 = document.createElement('select');
+      select1.setAttribute('name', 'contact[companiesRel][' + companyRowIndex + '][companyId]');
+      select1.setAttribute('id', 'contact_companiesRel_' + companyRowIndex + '_companyId');
+      select1.className = 'form--select';
+      populateSelect(select1, companyOptions, 'Select Company');
+      field1.appendChild(label1);
+      field1.appendChild(select1);
+      
+      var field2 = document.createElement('div');
+      field2.className = 'form--field';
+      var label2 = document.createElement('label');
+      label2.setAttribute('for', 'contact_companiesRel_' + companyRowIndex + '_jobRoleId');
+      label2.className = 'form--label';
+      label2.textContent = 'Job Role';
+      var select2 = document.createElement('select');
+      select2.setAttribute('name', 'contact[companiesRel][' + companyRowIndex + '][jobRoleId]');
+      select2.setAttribute('id', 'contact_companiesRel_' + companyRowIndex + '_jobRoleId');
+      select2.className = 'form--select';
+      populateSelect(select2, jobRoleOptions, 'Select Job Role');
+      field2.appendChild(label2);
+      field2.appendChild(select2);
+      
+      var field3 = document.createElement('div');
+      field3.className = 'form--field';
+      var label3 = document.createElement('label');
+      label3.setAttribute('for', 'contact_companiesRel_' + companyRowIndex + '_jobTitle');
+      label3.className = 'form--label';
+      label3.textContent = 'Job Title';
+      var input3 = document.createElement('input');
+      input3.setAttribute('type', 'text');
+      input3.setAttribute('name', 'contact[companiesRel][' + companyRowIndex + '][jobTitle]');
+      input3.setAttribute('id', 'contact_companiesRel_' + companyRowIndex + '_jobTitle');
+      input3.className = 'form--text-field';
+      field3.appendChild(label3);
+      field3.appendChild(input3);
+      
+      var field4 = document.createElement('div');
+      field4.className = 'form--field';
+      var button4 = document.createElement('button');
+      button4.setAttribute('type', 'button');
+      button4.className = 'button -with-icon icon-remove remove-company-btn';
+      button4.textContent = 'Remove';
+      field4.appendChild(button4);
+      
+      row.appendChild(field1);
+      row.appendChild(field2);
+      row.appendChild(field3);
+      row.appendChild(field4);
+      
+      container.appendChild(row);
+      companyRowIndex++;
+    }
+    
+    function removeCompanyRow(event) {
+      var button = event.target;
+      var row = button.closest('.company-row');
+      if (row) row.remove();
+    }
+    
+    function init() {
+      var addAddrBtn = document.getElementById('add-address-btn');
+      var addCompanyBtn = document.getElementById('add-company-btn');
+      
+      if (addAddrBtn) {
+        addAddrBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          addAddressRow();
+        });
+      }
+      
+      if (addCompanyBtn) {
+        addCompanyBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          addCompanyRow();
+        });
+      }
+      
+      var addressesContainer = document.getElementById('addresses-container');
+      if (addressesContainer) {
+        addressesContainer.addEventListener('click', function(e) {
+          if (e.target && e.target.classList && e.target.classList.contains('remove-address-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            removeAddressRow(e);
+          }
+        });
+      }
+      
+      var companiesContainer = document.getElementById('companies-container');
+      if (companiesContainer) {
+        companiesContainer.addEventListener('click', function(e) {
+          if (e.target && e.target.classList && e.target.classList.contains('remove-company-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            removeCompanyRow(e);
+          }
+        });
+      }
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+<% end %>
 

@@ -1,0 +1,68 @@
+<% html_title(t(:label_companies_menu)) -%>
+
+<% content_for :content_header do %>
+  <%= render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { t(:label_companies_menu) }
+    header.with_breadcrumbs([{ href: root_path, text: "Home" }, t(:label_companies_menu)])
+    header.with_action_button(
+      tag: :a,
+      href: new_company_path,
+      scheme: :primary,
+      mobile_icon: :plus,
+      mobile_label: t(:label_company_new),
+      size: :medium
+    ) do |button|
+      button.with_leading_visual_icon(icon: :plus)
+      t(:label_company_new)
+    end
+  end %>
+<% end %>
+
+<div class="companies-list-page">
+  <% if @companies.any? %>
+    <div class="generic-table--container">
+      <div class="generic-table--results-container">
+        <table class="generic-table">
+          <thead>
+            <tr>
+              <th>Company ID</th>
+              <th>Name</th>
+              <th>Company Number</th>
+              <th>Website</th>
+              <th>Tax Number</th>
+              <th>Payment Terms</th>
+              <th>VAT Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @companies.each do |company| %>
+              <tr>
+                <td><%= company["companyId"] || company[:companyId] %></td>
+                <td><%= h(company["name"] || company[:name] || "") %></td>
+                <td><%= h(company["companyNumber"] || company[:companyNumber] || "") %></td>
+                <td>
+                  <% website = company["website"] || company[:website] %>
+                  <% if website.present? %>
+                    <%= link_to h(website), website, target: "_blank", rel: "noopener noreferrer" %>
+                  <% else %>
+                    -
+                  <% end %>
+                </td>
+                <td><%= h(company["taxNumber"] || company[:taxNumber] || "") %></td>
+                <td><%= company["paymentTerms"] || company[:paymentTerms] || "-" %> <%= company["paymentTerms"].present? ? "days" : "" %></td>
+                <td><%= company["vatRate"] || company[:vatRate] || "-" %> <%= company["vatRate"].present? ? "%" : "" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% else %>
+    <div class="op-toast -info">
+      <div class="op-toast--content">
+        <p>No companies found.</p>
+      </div>
+    </div>
+  <% end %>
+</div>
+

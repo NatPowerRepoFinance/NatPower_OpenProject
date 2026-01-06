@@ -1,0 +1,85 @@
+<% html_title t(:label_addresses_menu), t(:label_address_new) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_address_new) }
+    header.with_breadcrumbs(
+      [{ href: root_path, text: "Home" },
+       { href: addresses_path, text: t(:label_addresses_menu) },
+       t(:label_address_new)]
+    )
+  end
+%>
+
+<%= form_with url: addresses_path, method: :post, local: true, scope: :address do |f| %>
+  <% if flash[:error].present? %>
+    <div class="op-toast -error">
+      <div class="op-toast--content">
+        <p><%= flash[:error] %></p>
+      </div>
+    </div>
+  <% end %>
+
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend"><%= t(:label_general) %></legend>
+    
+    <div class="form--field">
+      <%= f.label :line1, "Line 1", class: "form--label" %>
+      <%= f.text_field :line1, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :line2, "Line 2", class: "form--label" %>
+      <%= f.text_field :line2, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :line3, "Line 3", class: "form--label" %>
+      <%= f.text_field :line3, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :line4, "Line 4", class: "form--label" %>
+      <%= f.text_field :line4, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :city, "City", class: "form--label" %>
+      <%= f.text_field :city, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :county, "County", class: "form--label" %>
+      <%= f.text_field :county, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :postCode, "Post Code", class: "form--label" %>
+      <%= f.text_field :postCode, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :countryId, "Country", class: "form--label" %>
+      <%= f.select :countryId, 
+          options_from_collection_for_select(@countries, ->(c) { c["countryId"] || c[:countryId] || c["id"] || c[:id] }, 
+          ->(c) { c["name"] || c[:name] || c["countryName"] || c[:countryName] || "" }), 
+          { include_blank: "Select Country" }, 
+          { class: "form--select", container_class: "-middle" } %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :fullAddress, "Full Address", class: "form--label" %>
+      <%= f.text_area :fullAddress, class: "form--text-field", rows: 3, container_class: "-wide" %>
+    </div>
+
+    <div class="form--field" style="display: none;">
+      <%= f.hidden_field :isDeleted, value: false %>
+    </div>
+  </fieldset>
+
+  <div class="form--actions">
+    <%= styled_button_tag t(:button_save), class: "-primary -with-icon icon-checkmark" %>
+    <%= link_to t(:button_cancel), addresses_path, class: "button -with-icon icon-cancel" %>
+  </div>
+<% end %>
+

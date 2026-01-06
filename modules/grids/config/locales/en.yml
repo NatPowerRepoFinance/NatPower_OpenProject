@@ -30,6 +30,9 @@ en:
       project_commentary:
         title: "Project Commentary"
         no_commentary: "No commentary available."
+      project_journal:
+        title: "Project Journal"
+        no_journal: "No journal entries available."
 
   activerecord:
     attributes:

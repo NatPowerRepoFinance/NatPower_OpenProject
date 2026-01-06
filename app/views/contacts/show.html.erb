@@ -1,4 +1,7 @@
-<% contact_name = @contact.display_name.presence || Contact.model_name.human %>
+<% 
+  contact_id = @contact["contactId"] || @contact[:contactId] || @contact["id"] || @contact[:id]
+  contact_name = @contact["fullName"] || @contact[:fullName] || "Contact ##{contact_id}"
+%>
 
 <% html_title t(:label_administration), contact_name %>
 
@@ -16,36 +19,69 @@
 <fieldset class="form--fieldset">
   <legend class="form--fieldset-legend"><%= t(:label_contact_details) %></legend>
 
-  <% [
-      :honorifics_id,
-      :first_name,
-      :last_name,
-      :full_name,
-      :email_work,
-      :email_private,
-      :phone,
-      :mobile,
-      :phone_alternative,
-      :job_title,
-      :date_of_birth
-    ].each do |attribute| %>
-    <div class="form--field">
-      <label class="form--label"><%= Contact.human_attribute_name(attribute) %></label>
-      <input type="text"
-             readonly
-             class="form--text-field"
-             value="<%= h(@contact.public_send(attribute)) %>">
-    </div>
-  <% end %>
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:honorifics_id) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["honorificsId"] || @contact[:honorificsId] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:first_name) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["firstName"] || @contact[:firstName] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:last_name) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["lastName"] || @contact[:lastName] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:full_name) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["fullName"] || @contact[:fullName] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:email_work) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["emailWork"] || @contact[:emailWork] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:email_private) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["emailPrivate"] || @contact[:emailPrivate] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:phone) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["phone"] || @contact[:phone] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:mobile) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["mobile"] || @contact[:mobile] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:phone_alternative) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["phoneAlternative"] || @contact[:phoneAlternative] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:job_title) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["jobTitle"] || @contact[:jobTitle] || "") %>">
+  </div>
+
+  <div class="form--field">
+    <label class="form--label"><%= Contact.human_attribute_name(:date_of_birth) %></label>
+    <input type="text" readonly class="form--text-field" value="<%= h(@contact["dateOfBirth"] || @contact[:dateOfBirth] || "") %>">
+  </div>
 
   <div class="form--field">
     <label class="form--label"><%= Contact.human_attribute_name(:is_deleted) %></label>
-    <input type="checkbox" disabled <%= @contact.is_deleted? ? "checked" : "" %> />
+    <input type="checkbox" disabled <%= (@contact["isDeleted"] || @contact[:isDeleted]) ? "checked" : "" %> />
   </div>
 </fieldset>
 
 <div class="form--actions">
-  <%= link_to t(:button_edit), edit_contact_path(@contact), class: "button -primary" %>
+  <%= link_to t(:button_edit), edit_contact_path(contact_id), class: "button -primary" %>
   <%= link_to t(:button_back), contacts_path, class: "button" %>
 </div>
 

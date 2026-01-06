@@ -1,0 +1,363 @@
+<% html_title t(:label_companies_menu), t(:label_company_new) %>
+
+<%=
+  render(Primer::OpenProject::PageHeader.new) do |header|
+    header.with_title { t(:label_company_new) }
+    header.with_breadcrumbs(
+      [{ href: root_path, text: "Home" },
+       { href: companies_path, text: t(:label_companies_menu) },
+       t(:label_company_new)]
+    )
+  end
+%>
+
+<% 
+  # Pre-generate address options as JSON array for JavaScript
+  address_options_data = @addresses.map do |address|
+    address_id = address["addressId"] || address[:addressId] || address["id"] || address[:id]
+    address_text = "#{address["street"] || address[:street] || ""}, #{address["city"] || address[:city] || ""}"
+    { value: address_id, text: address_text }
+  end
+  
+  # Pre-generate job role options as JSON array for JavaScript
+  job_role_options_data = @job_roles.map do |job_role|
+    role_id = job_role["jobRoleId"] || job_role[:jobRoleId] || job_role["id"] || job_role[:id]
+    role_name = job_role["jobRole"] || job_role[:jobRole] || ""
+    { value: role_id, text: role_name }
+  end
+  
+  # Pre-generate contact options as JSON array for JavaScript
+  contact_options_data = @contacts.map do |contact|
+    contact_id = contact["contactId"] || contact[:contactId] || contact["id"] || contact[:id]
+    contact_name = contact["fullName"] || contact[:fullName] || ""
+    { value: contact_id, text: contact_name }
+  end
+  
+  # Pre-generate address type options as JSON array for JavaScript
+  address_type_options_data = @address_types.map do |address_type|
+    type_id = address_type["addressTypeId"] || address_type[:addressTypeId] || address_type["id"] || address_type[:id]
+    type_description = address_type["description"] || address_type[:description] || ""
+    { value: type_id, text: type_description }
+  end
+%>
+<%= form_with url: companies_path, method: :post, local: true, scope: :company, id: "company-form" do |f| %>
+  <% if flash[:error].present? %>
+    <div class="op-toast -error">
+      <div class="op-toast--content">
+        <p><%= flash[:error] %></p>
+      </div>
+    </div>
+  <% end %>
+
+  <fieldset class="form--fieldset">
+    <legend class="form--fieldset-legend"><%= t(:label_general) %></legend>
+    
+    <div class="form--field -required">
+      <%= f.label :name, t(:label_name), class: "form--label" %>
+      <%= f.text_field :name, required: true, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :website, t(:label_website), class: "form--label" %>
+      <%= f.url_field :website, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :companyNumber, "Company Number", class: "form--label" %>
+      <%= f.text_field :companyNumber, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :taxNumber, "Tax Number", class: "form--label" %>
+      <%= f.text_field :taxNumber, class: "form--text-field", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :vatRate, "VAT Rate (%)", class: "form--label" %>
+      <%= f.number_field :vatRate, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :withHoldingTax, "With Holding Tax", class: "form--label" %>
+      <%= f.check_box :withHoldingTax, class: "form--check-box", container_class: "-middle" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :withHoldingTaxRate, "With Holding Tax Rate (%)", class: "form--label" %>
+      <%= f.number_field :withHoldingTaxRate, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :paymentTerms, "Payment Terms (days)", class: "form--label" %>
+      <%= f.number_field :paymentTerms, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :earlyPaymentDiscount, "Early Payment Discount (%)", class: "form--label" %>
+      <%= f.number_field :earlyPaymentDiscount, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :latePaymentPenalties, "Late Payment Penalties (%)", class: "form--label" %>
+      <%= f.number_field :latePaymentPenalties, step: 0.1, class: "form--text-field", container_class: "-slim" %>
+    </div>
+
+    <div class="form--field">
+      <%= f.label :isDeleted, "Is Deleted", class: "form--label" %>
+      <%= f.check_box :isDeleted, class: "form--check-box", container_class: "-middle" %>
+    </div>
+  </fieldset>
+
+  <fieldset class="form--fieldset" id="addresses-fieldset">
+    <legend class="form--fieldset-legend">Addresses</legend>
+    <div id="addresses-container">
+      <div class="address-row form--field">
+        <div class="form--field">
+          <%= styled_label_tag "company[addressesRel][0][addressId]", "Address", class: "form--label" %>
+          <%= select_tag "company[addressesRel][0][addressId]", 
+              options_from_collection_for_select(@addresses, ->(a) { a["addressId"] || a[:addressId] || a["id"] || a[:id] }, 
+              ->(a) { "#{a["street"] || a[:street] || ""}, #{a["city"] || a[:city] || ""}" }), 
+              { include_blank: "Select Address", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= styled_label_tag "company[addressesRel][0][addressTypeId]", "Address Type", class: "form--label" %>
+          <%= select_tag "company[addressesRel][0][addressTypeId]", 
+              options_from_collection_for_select(@address_types, ->(at) { at["addressTypeId"] || at[:addressTypeId] || at["id"] || at[:id] }, 
+              ->(at) { at["description"] || at[:description] || "" }), 
+              { include_blank: "Select Address Type", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= button_tag "Remove", type: "button", class: "button -with-icon icon-remove remove-address-btn" %>
+        </div>
+      </div>
+    </div>
+    <%= button_tag "Add Address", type: "button", class: "button -with-icon icon-add", id: "add-address-btn" %>
+  </fieldset>
+
+  <fieldset class="form--fieldset" id="contacts-fieldset">
+    <legend class="form--fieldset-legend">Contacts</legend>
+    <div id="contacts-container">
+      <div class="contact-row form--field">
+        <div class="form--field">
+          <%= styled_label_tag "company[contactRel][0][contactId]", "Contact", class: "form--label" %>
+          <%= select_tag "company[contactRel][0][contactId]", 
+              options_from_collection_for_select(@contacts, ->(c) { c["contactId"] || c[:contactId] || c["id"] || c[:id] }, 
+              ->(c) { c["fullName"] || c[:fullName] || "" }), 
+              { include_blank: "Select Contact", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= styled_label_tag "company[contactRel][0][jobRoleId]", "Job Role", class: "form--label" %>
+          <%= select_tag "company[contactRel][0][jobRoleId]", 
+              options_from_collection_for_select(@job_roles, ->(jr) { jr["jobRoleId"] || jr[:jobRoleId] || jr["id"] || jr[:id] }, 
+              ->(jr) { jr["jobRole"] || jr[:jobRole] || "" }), 
+              { include_blank: "Select Job Role", class: "form--select", container_class: "-middle" } %>
+        </div>
+        <div class="form--field">
+          <%= button_tag "Remove", type: "button", class: "button -with-icon icon-remove remove-contact-btn" %>
+        </div>
+      </div>
+    </div>
+    <%= button_tag "Add Contact", type: "button", class: "button -with-icon icon-add", id: "add-contact-btn" %>
+  </fieldset>
+
+  <div class="form--actions">
+    <%= styled_button_tag t(:button_save), class: "-primary -with-icon icon-checkmark" %>
+    <%= link_to t(:button_cancel), companies_path, class: "button -with-icon icon-cancel" %>
+  </div>
+<% end %>
+
+<%= nonced_javascript_tag do %>
+  (function() {
+    var addressOptions = <%= raw(address_options_data.to_json) %>;
+    var jobRoleOptions = <%= raw(job_role_options_data.to_json) %>;
+    var contactOptions = <%= raw(contact_options_data.to_json) %>;
+    var addressTypeOptions = <%= raw(address_type_options_data.to_json) %>;
+    
+    var addressRowIndex = 1;
+    var contactRowIndex = 1;
+    
+    function populateSelect(select, options, blankText) {
+      select.innerHTML = '';
+      
+      var blankOption = document.createElement('option');
+      blankOption.value = '';
+      if (blankText) {
+        blankOption.textContent = blankText;
+      } else {
+        blankOption.textContent = select.id.indexOf('addressId') !== -1 ? 'Select Address' : 'Select Job Role';
+      }
+      select.appendChild(blankOption);
+      
+      options.forEach(function(opt) {
+        var option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.text;
+        select.appendChild(option);
+      });
+    }
+    
+    function addAddressRow() {
+      var container = document.getElementById('addresses-container');
+      if (!container) return;
+      
+      var row = document.createElement('div');
+      row.className = 'address-row form--field';
+      
+      var field1 = document.createElement('div');
+      field1.className = 'form--field';
+      var label1 = document.createElement('label');
+      label1.setAttribute('for', 'company_addressesRel_' + addressRowIndex + '_addressId');
+      label1.className = 'form--label';
+      label1.textContent = 'Address';
+      var select1 = document.createElement('select');
+      select1.setAttribute('name', 'company[addressesRel][' + addressRowIndex + '][addressId]');
+      select1.setAttribute('id', 'company_addressesRel_' + addressRowIndex + '_addressId');
+      select1.className = 'form--select';
+      populateSelect(select1, addressOptions);
+      field1.appendChild(label1);
+      field1.appendChild(select1);
+      
+      var field2 = document.createElement('div');
+      field2.className = 'form--field';
+      var label2 = document.createElement('label');
+      label2.setAttribute('for', 'company_addressesRel_' + addressRowIndex + '_addressTypeId');
+      label2.className = 'form--label';
+      label2.textContent = 'Address Type';
+      var select2 = document.createElement('select');
+      select2.setAttribute('name', 'company[addressesRel][' + addressRowIndex + '][addressTypeId]');
+      select2.setAttribute('id', 'company_addressesRel_' + addressRowIndex + '_addressTypeId');
+      select2.className = 'form--select';
+      populateSelect(select2, addressTypeOptions, 'Select Address Type');
+      field2.appendChild(label2);
+      field2.appendChild(select2);
+      
+      var field3 = document.createElement('div');
+      field3.className = 'form--field';
+      var button3 = document.createElement('button');
+      button3.setAttribute('type', 'button');
+      button3.className = 'button -with-icon icon-remove remove-address-btn';
+      button3.textContent = 'Remove';
+      field3.appendChild(button3);
+      
+      row.appendChild(field1);
+      row.appendChild(field2);
+      row.appendChild(field3);
+      
+      container.appendChild(row);
+      addressRowIndex++;
+    }
+    
+    function removeAddressRow(event) {
+      var button = event.target;
+      var row = button.closest('.address-row');
+      if (row) row.remove();
+    }
+    
+    function addContactRow() {
+      var container = document.getElementById('contacts-container');
+      if (!container) return;
+      
+      var row = document.createElement('div');
+      row.className = 'contact-row form--field';
+      
+      var field1 = document.createElement('div');
+      field1.className = 'form--field';
+      var label1 = document.createElement('label');
+      label1.setAttribute('for', 'company_contactRel_' + contactRowIndex + '_contactId');
+      label1.className = 'form--label';
+      label1.textContent = 'Contact';
+      var select1 = document.createElement('select');
+      select1.setAttribute('name', 'company[contactRel][' + contactRowIndex + '][contactId]');
+      select1.setAttribute('id', 'company_contactRel_' + contactRowIndex + '_contactId');
+      select1.className = 'form--select';
+      populateSelect(select1, contactOptions, 'Select Contact');
+      field1.appendChild(label1);
+      field1.appendChild(select1);
+      
+      var field2 = document.createElement('div');
+      field2.className = 'form--field';
+      var label2 = document.createElement('label');
+      label2.setAttribute('for', 'company_contactRel_' + contactRowIndex + '_jobRoleId');
+      label2.className = 'form--label';
+      label2.textContent = 'Job Role';
+      var select2 = document.createElement('select');
+      select2.setAttribute('name', 'company[contactRel][' + contactRowIndex + '][jobRoleId]');
+      select2.setAttribute('id', 'company_contactRel_' + contactRowIndex + '_jobRoleId');
+      select2.className = 'form--select';
+      populateSelect(select2, jobRoleOptions);
+      field2.appendChild(label2);
+      field2.appendChild(select2);
+      
+      var field3 = document.createElement('div');
+      field3.className = 'form--field';
+      var button3 = document.createElement('button');
+      button3.setAttribute('type', 'button');
+      button3.className = 'button -with-icon icon-remove remove-contact-btn';
+      button3.textContent = 'Remove';
+      field3.appendChild(button3);
+      
+      row.appendChild(field1);
+      row.appendChild(field2);
+      row.appendChild(field3);
+      
+      container.appendChild(row);
+      contactRowIndex++;
+    }
+    
+    function removeContactRow(event) {
+      var button = event.target;
+      var row = button.closest('.contact-row');
+      if (row) row.remove();
+    }
+    
+    function init() {
+      var addAddrBtn = document.getElementById('add-address-btn');
+      var addContactBtn = document.getElementById('add-contact-btn');
+      
+      if (addAddrBtn) {
+        addAddrBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          addAddressRow();
+        });
+      }
+      
+      if (addContactBtn) {
+        addContactBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          addContactRow();
+        });
+      }
+      
+      var addressesContainer = document.getElementById('addresses-container');
+      if (addressesContainer) {
+        addressesContainer.addEventListener('click', function(e) {
+          if (e.target && e.target.classList && e.target.classList.contains('remove-address-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            removeAddressRow(e);
+          }
+        });
+      }
+      
+      var contactsContainer = document.getElementById('contacts-container');
+      if (contactsContainer) {
+        contactsContainer.addEventListener('click', function(e) {
+          if (e.target && e.target.classList && e.target.classList.contains('remove-contact-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            removeContactRow(e);
+          }
+        });
+      }
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+<% end %>
+

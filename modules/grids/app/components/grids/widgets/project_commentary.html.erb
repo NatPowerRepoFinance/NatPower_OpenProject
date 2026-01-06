@@ -10,6 +10,7 @@
 
   if commentary_items.any?
     commentary_items.each do |comment|
+      commentary_id = comment["id"] || comment[:id]
       container.with_row(mb: 3) do
         content_tag(:div, class: "commentary-item") do
           concat(
@@ -21,6 +22,16 @@
               )
               concat(
                 content_tag(:div, style: "display: flex; gap: 0.5rem; align-items: center;") do
+                  if commentary_id.present?
+                    concat(
+                      render(Primer::Beta::Button.new(
+                        scheme: :invisible,
+                        size: :small,
+                        tag: :a,
+                        href: edit_project_commentary_path(project, commentary_id)
+                      )) { "Edit" }
+                    )
+                  end
                   concat(
                     render(Primer::Beta::Label.new(size: :medium, scheme: rating_badge_scheme(comment["projectRating"] || comment[:projectRating]))) do
                       rating_label(comment["projectRating"] || comment[:projectRating])
