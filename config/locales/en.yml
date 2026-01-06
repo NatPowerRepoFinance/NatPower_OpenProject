@@ -1111,6 +1111,19 @@ en:
 
   activemodel:
     attributes:
+      contact:
+        honorifics_id: "Honorifics"
+        first_name: "First name"
+        last_name: "Last name"
+        full_name: "Full name"
+        email_work: "Work email"
+        email_private: "Private email"
+        phone: "Phone"
+        mobile: "Mobile"
+        phone_alternative: "Alternative phone"
+        job_title: "Job title"
+        date_of_birth: "Date of birth"
+        is_deleted: "Archived"
       projects/copy_options:
         dependencies: "Dependencies"
 

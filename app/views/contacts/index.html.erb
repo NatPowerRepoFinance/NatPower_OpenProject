@@ -39,15 +39,25 @@
         </thead>
         <tbody>
           <% @contacts.each do |contact| %>
+            <% 
+              contact_id = contact["contactId"] || contact[:contactId] || contact["id"] || contact[:id]
+              full_name = contact["fullName"] || contact[:fullName] || ""
+              email_work = contact["emailWork"] || contact[:emailWork] || ""
+              email_private = contact["emailPrivate"] || contact[:emailPrivate] || ""
+              primary_email = email_work.presence || email_private
+              phone = contact["phone"] || contact[:phone] || ""
+              mobile = contact["mobile"] || contact[:mobile] || ""
+              job_title = contact["jobTitle"] || contact[:jobTitle] || ""
+            %>
             <tr>
-              <td><%= link_to(contact.display_name.presence || Contact.model_name.human, contact_path(contact)) %></td>
-              <td><%= contact.primary_email %></td>
-              <td><%= safe_join([contact.phone, contact.mobile].map { |value| value.presence }.compact, " / ") %></td>
-              <td><%= contact.job_title %></td>
+              <td><%= link_to(full_name.presence || "Contact ##{contact_id}", contact_path(contact_id)) %></td>
+              <td><%= primary_email %></td>
+              <td><%= safe_join([phone, mobile].map { |value| value.presence }.compact, " / ") %></td>
+              <td><%= job_title %></td>
               <td class="icon-context-menu">
-                <%= link_to t(:button_edit), edit_contact_path(contact), class: "button -tiny" %>
+                <%= link_to t(:button_edit), edit_contact_path(contact_id), class: "button -tiny" %>
                 <%= link_to t(:button_delete),
-                            contact_path(contact),
+                            contact_path(contact_id),
                             data: { confirm: t(:text_are_you_sure) },
                             method: :delete,
                             class: "button -tiny -danger" %>

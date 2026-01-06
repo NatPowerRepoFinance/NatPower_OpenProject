@@ -1,19 +1,24 @@
 <% html_title t(:label_administration), t(:label_contact_edit) %>
 
+<% 
+  contact_id = @contact["contactId"] || @contact[:contactId] || @contact["id"] || @contact[:id]
+  contact_name = @contact["fullName"] || @contact[:fullName] || "Contact ##{contact_id}"
+%>
+
 <%=
   render(Primer::OpenProject::PageHeader.new) do |header|
     header.with_title { t(:label_contact_edit) }
     header.with_breadcrumbs(
       [{ href: admin_index_path, text: t(:label_administration) },
        { href: contacts_path, text: t(:label_contact_plural) },
-       { href: contact_path(@contact), text: @contact.display_name.presence || Contact.model_name.human },
+       { href: contact_path(contact_id), text: contact_name },
        t(:label_contact_edit)]
     )
   end
 %>
 
-<%= labelled_tabular_form_for @contact,
-                              url: contact_path(@contact),
+<%= labelled_tabular_form_for @contact_form, 
+                              url: contact_path(contact_id),
                               html: { method: :patch } do |f| %>
   <%= render partial: "form", locals: { f: f, contact: @contact } %>
 <% end %>

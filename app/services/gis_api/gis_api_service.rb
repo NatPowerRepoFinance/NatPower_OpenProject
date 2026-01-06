@@ -146,6 +146,12 @@ module GisAPI
       make_request(:get, endpoint)
     end
 
+    def create_contact(attributes)
+      endpoint = "/erp/contact/create"
+      payload = attributes.to_json
+      make_request(:post, endpoint, body: payload)
+    end
+
     def create_company(attributes)
       endpoint = "/erp/company/create"
       payload = attributes.to_json
@@ -725,11 +731,25 @@ module GisAPI
 
         # Check HTTP status code
         unless response.status == 200
-          error_message = "GIS API returned status #{response.status}"
-          Rails.logger.warn("GIS API: #{error_message}")
+          # Try to read the response body for error details
+          begin
+            error_body = response.json(symbolize_keys: false) rescue response.body.to_s rescue "Unable to read response body"
+            Rails.logger.warn("GIS API: Status #{response.status}, Response: #{error_body.inspect}")
+            
+            # Extract error message from response if available
+            if error_body.is_a?(Hash)
+              error_message = error_body["message"] || error_body[:message] || "GIS API returned status #{response.status}"
+            else
+              error_message = "GIS API returned status #{response.status}: #{error_body}"
+            end
+          rescue => e
+            error_message = "GIS API returned status #{response.status}"
+            Rails.logger.warn("GIS API: #{error_message}, Error reading response: #{e.message}")
+          end
+          
           errors = ActiveModel::Errors.new(self)
           errors.add(:base, error_message)
-          return ServiceResult.failure(errors: errors)
+          return ServiceResult.failure(errors: errors, result: error_body)
         end
 
         data = response.json(symbolize_keys: false) rescue {}
