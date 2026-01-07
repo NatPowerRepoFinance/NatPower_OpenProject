@@ -319,6 +319,8 @@ Rails.application.routes.draw do
             patch "by_pda_id/:pda_id/negotiation/:negotiation_id", controller: "pda_nfs/negotiations", action: :update, as: :update_negotiation_by_pda_id
             get "by_pda_id/:pda_id/negotiation/:negotiation_id/land_title/:title_no", controller: "pda_nfs/negotiations", action: :show_land_title_api, as: :land_title_api_by_pda_id
             get "by_pda_id/:pda_id/negotiation/:negotiation_id/contracts", controller: "pda_nfs/negotiations", action: :negotiation_contracts, as: :negotiation_contracts_by_pda_id
+            get "by_pda_id/:pda_id/negotiation/:negotiation_id/contracts/new", controller: "pda_nfs/contracts", action: :new, as: :new_contract_by_pda_id
+            post "by_pda_id/:pda_id/negotiation/:negotiation_id/contracts", controller: "pda_nfs/contracts", action: :create, as: :contracts_by_pda_id
             get "by_pda_id/:pda_id/negotiation/:negotiation_id/link_contact", controller: "pda_nfs/negotiations", action: :link_contact, as: :link_contact_by_pda_id
             post "by_pda_id/:pda_id/negotiation/:negotiation_id/link_contact", controller: "pda_nfs/negotiations", action: :create_contact_link, as: :create_contact_link_by_pda_id
             

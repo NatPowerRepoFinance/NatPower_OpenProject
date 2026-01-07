@@ -13,8 +13,11 @@
   persisted_negotiation = @land_negotiation.respond_to?(:persisted?) && @land_negotiation.persisted?
 
   negotiation_breadcrumb =
-    if persisted_negotiation
+    if persisted_negotiation && @pda_nf.present?
       { href: project_settings_pda_nf_negotiation_path(@project, @pda_nf, @land_negotiation),
+        text: "Negotiation ##{negotiation_label}" }
+    elsif @pda_id.present?
+      { href: negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: @api_negotiation_id),
         text: "Negotiation ##{negotiation_label}" }
     else
       "Negotiation ##{negotiation_label}"
@@ -24,25 +27,55 @@
 %>
 
 <%=
+  # Determine PDA breadcrumb - use API route if no database record
+  pda_breadcrumb = if @pda_id.present?
+    { href: by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id), text: "PDA: #{@pda_id}" }
+  else
+    { href: project_settings_pda_nfs_path(@project), text: "PDAs" }
+  end
+  
   render Primer::OpenProject::PageHeader.new do |header|
     header.with_title { "Create Contract" }
     header.with_breadcrumbs(
       [{ href: project_overview_path(@project.id), text: @project.name },
        { href: project_settings_general_path(@project.id), text: I18n.t("label_project_settings") },
-       { href: project_settings_pda_nf_path(@project.id, @pda_nf.id), text: "PDA: #{@pda_nf.code}" },
+       pda_breadcrumb,
        negotiation_breadcrumb,
        "Create Contract"]
     )
   end
 %>
 
+<% if flash[:error].present? %>
+  <div class="flash error" style="margin-bottom: 1rem;">
+    <div class="errorExplanation">
+      <p><%= h(flash[:error]) %></p>
+    </div>
+  </div>
+<% end %>
+
+<% if flash[:notice].present? %>
+  <div class="flash notice" style="margin-bottom: 1rem;">
+    <p><%= h(flash[:notice]) %></p>
+  </div>
+<% end %>
+
 <div class="generic-form">
   <fieldset class="form--fieldset">
     <legend class="form--fieldset-legend">Contract Details</legend>
 
-    <%= form_with url: project_settings_pda_nf_negotiation_contracts_path(@project, @pda_nf, negotiation_param_for_form),
+    <% 
+      # Use API-only route if pda_id is present, otherwise fall back to DB route
+      form_url = if @pda_id.present?
+        contracts_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: negotiation_param_for_form)
+      else
+        project_settings_pda_nf_negotiation_contracts_path(@project, @pda_nf, negotiation_param_for_form)
+      end
+    %>
+    <%= form_with url: form_url,
                   scope: :contract,
-                  html: { class: "form", multipart: true } do |f| %>
+                  html: { class: "form", multipart: true },
+                  local: true do |f| %>
       <div class="form--field -required">
         <%= f.label :landNegotiationId, "Land Negotiation ID", class: "form--label" %>
         <div class="form--field-container">
@@ -92,11 +125,22 @@
       </div>
 
       <div class="form--field">
-        <%= f.label :status, "Status ID", class: "form--label" %>
+        <%= f.label :status, "Status", class: "form--label" %>
         <div class="form--field-container">
-          <%= f.number_field :status,
-                             value: @contract_form["status"],
-                             class: "form--text-field" %>
+          <% if @contract_statuses.present? && @contract_statuses.any? %>
+            <%= f.select :status,
+                         options_for_select(
+                           @contract_statuses.map { |s| [s[:label], s[:id]] },
+                           @contract_form["status"]
+                         ),
+                         { prompt: "Select Status" },
+                         { class: "form--select" } %>
+          <% else %>
+            <%= f.number_field :status,
+                               value: @contract_form["status"],
+                               class: "form--text-field",
+                               placeholder: "Status ID" %>
+          <% end %>
         </div>
       </div>
 
@@ -164,9 +208,14 @@
       <div class="form--field">
         <%= f.button "Create Contract",
                      class: "button -primary -with-icon icon-checkmark" %>
-        <%= link_to t(:button_cancel),
-                    project_settings_pda_nf_negotiation_path(@project, @pda_nf, negotiation_param_for_form),
-                    class: "button" %>
+        <% 
+          cancel_path = if @pda_id.present?
+            negotiation_by_pda_id_project_settings_pda_nfs_path(@project, pda_id: @pda_id, negotiation_id: negotiation_param_for_form)
+          else
+            project_settings_pda_nf_negotiation_path(@project, @pda_nf, negotiation_param_for_form)
+          end
+        %>
+        <%= link_to t(:button_cancel), cancel_path, class: "button" %>
       </div>
     <% end %>
   </fieldset>

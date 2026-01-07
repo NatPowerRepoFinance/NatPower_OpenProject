@@ -549,7 +549,23 @@
 <%# Contracts Section %>
 <div class="generic-form">
   <fieldset class="form--fieldset">
-    <legend class="form--fieldset-legend">Contracts</legend>
+    <legend class="form--fieldset-legend">
+      Contracts
+      <div class="form--toolbar" style="margin-left: auto;">
+        <span class="form--toolbar-item">
+          <% if @pda_id.present? && @negotiation_id.present? %>
+            <%= link_to "Create Contract",
+                        new_contract_by_pda_id_project_settings_pda_nfs_path(
+                          @project,
+                          pda_id: @pda_id,
+                          negotiation_id: @negotiation_id,
+                          api_negotiation_id: @negotiation_id
+                        ),
+                        class: "button -primary -with-icon icon-add" %>
+          <% end %>
+        </span>
+      </div>
+    </legend>
     
     <% if @contracts_data.present? && @contracts_data.any? %>
       <div class="generic-table--container">
